@@ -1,0 +1,16 @@
+services:
+  workday:
+    build: .
+    image: workday:latest
+    container_name: workday
+    ports:
+      - "8080:8080"
+    environment:
+      # Set to "1" when Workday is served over HTTPS so sign-in cookies are only sent securely.
+      COOKIE_SECURE: "0"
+    volumes:
+      - workday-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  workday-data:

@@ -1,0 +1,112 @@
+import { useEffect, useState } from 'react';
+import { History, ListChecks, MessageSquare, Trash2, X } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { LoadingState } from '@/components/QueryStates';
+import { TaskDetailsTab } from '@/features/tasks/TaskDetailsTab';
+import { CommentsTab } from '@/features/comments/CommentsTab';
+import { HistoryTab } from '@/features/tasks/HistoryTab';
+import { useQuery } from '@/hooks/useQuery';
+import { useToast } from '@/hooks/useToast';
+import { deleteTask, getTask } from '@/lib/db/tasks';
+import { canDeleteTask, canWrite } from '@/lib/db/access';
+import { useCurrentUser } from '@/features/auth/AuthProvider';
+import type { Member, ProjectAccess, Status } from '@/lib/db/types';
+
+interface TaskPanelProps {
+  taskId: string;
+  statuses: Status[];
+  members: Member[];
+  access: ProjectAccess | null;
+  onClose: () => void;
+}
+
+type Tab = 'details' | 'comments' | 'history';
+const TABS: { id: Tab; label: string; icon: typeof History }[] = [
+  { id: 'details', label: 'Details', icon: ListChecks },
+  { id: 'comments', label: 'Comments', icon: MessageSquare },
+  { id: 'history', label: 'History', icon: History },
+];
+
+export function TaskPanel({ taskId, statuses, members, access, onClose }: TaskPanelProps) {
+  const toast = useToast();
+  const me = useCurrentUser();
+  const editable = canWrite(access);
+  const { data: task, loading } = useQuery(() => getTask(taskId), `task:${taskId}`);
+  const [tab, setTab] = useState<Tab>('details');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !confirmDelete && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose, confirmDelete]);
+
+  const status = statuses.find((s) => s.id === task?.statusId);
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Task details">
+      <div className="absolute inset-0 animate-fade-in bg-slate-900/30" onClick={onClose} />
+      <aside className="relative flex h-full w-full animate-slide-left flex-col bg-white shadow-2xl dark:bg-slate-900 sm:max-w-xl">
+        <header className="flex items-center gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800 sm:px-6">
+          {status && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium dark:bg-slate-800">
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: status.color }} />
+              {status.name}
+            </span>
+          )}
+          {!editable && (
+            <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">View only</span>
+          )}
+          <div className="flex-1" />
+          {task && canDeleteTask(access, task, me) && (
+            <button className="icon-btn hover:text-red-600 dark:hover:text-red-400" onClick={() => setConfirmDelete(true)} aria-label="Delete task" title="Delete task">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+          <button className="icon-btn" onClick={onClose} aria-label="Close panel"><X className="h-5 w-5" /></button>
+        </header>
+
+        {loading && !task ? (
+          <LoadingState />
+        ) : !task ? (
+          <div className="p-8 text-center text-sm text-slate-500">This task no longer exists. It may have been deleted.</div>
+        ) : (
+          <>
+            <nav className="flex gap-1 border-b border-slate-100 px-4 dark:border-slate-800 sm:px-6" role="tablist">
+              {TABS.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  role="tab"
+                  aria-selected={tab === id}
+                  onClick={() => setTab(id)}
+                  className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+                    tab === id
+                      ? 'border-brand-600 text-brand-700 dark:border-brand-400 dark:text-brand-300'
+                      : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" /> {label}
+                </button>
+              ))}
+            </nav>
+            <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
+              {tab === 'details' && <TaskDetailsTab task={task} statuses={statuses} members={members} editable={editable} />}
+              {tab === 'comments' && <CommentsTab taskId={task.id} members={members} editable={editable} manage={access === 'manage'} />}
+              {tab === 'history' && <HistoryTab taskId={task.id} />}
+            </div>
+          </>
+        )}
+      </aside>
+
+      {confirmDelete && task && (
+        <ConfirmDialog
+          title="Delete task?"
+          message={`"${task.title}" and its checklist, comments and history will be permanently deleted.`}
+          confirmLabel="Delete task"
+          onConfirm={async () => { await deleteTask(task.id); onClose(); toast.success('Task deleted'); }}
+          onClose={() => setConfirmDelete(false)}
+        />
+      )}
+    </div>
+  );
+}

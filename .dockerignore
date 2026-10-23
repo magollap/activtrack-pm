@@ -1,0 +1,12 @@
+node_modules
+dist
+dev-dist
+.git
+.bolt
+.env
+.env.*
+*.log
+Dockerfile
+docker-compose.yml
+.dockerignore
+data
