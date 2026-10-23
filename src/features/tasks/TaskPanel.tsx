@@ -8,7 +8,7 @@ import { HistoryTab } from '@/features/tasks/HistoryTab';
 import { useQuery } from '@/hooks/useQuery';
 import { useToast } from '@/hooks/useToast';
 import { deleteTask, getTask } from '@/lib/db/tasks';
-import { canDeleteTask, canWrite } from '@/lib/db/access';
+import { canDeleteTask, canManage, canWrite } from '@/lib/db/access';
 import { useCurrentUser } from '@/features/auth/AuthProvider';
 import type { Member, ProjectAccess, Status } from '@/lib/db/types';
 
@@ -91,7 +91,7 @@ export function TaskPanel({ taskId, statuses, members, access, onClose }: TaskPa
             </nav>
             <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
               {tab === 'details' && <TaskDetailsTab task={task} statuses={statuses} members={members} editable={editable} />}
-              {tab === 'comments' && <CommentsTab taskId={task.id} members={members} editable={editable} manage={access === 'manage'} />}
+              {tab === 'comments' && <CommentsTab taskId={task.id} members={members} editable={editable} manage={canManage(access)} />}
               {tab === 'history' && <HistoryTab taskId={task.id} />}
             </div>
           </>

@@ -5,6 +5,7 @@ import { Logo } from '@/components/Logo';
 import { ProjectFormModal } from '@/features/projects/ProjectFormModal';
 import { useCurrentUser } from '@/features/auth/AuthProvider';
 import { useQuery } from '@/hooks/useQuery';
+import { canCreateProjects } from '@/lib/db/access';
 import { listProjects } from '@/lib/db/projects';
 import type { Project } from '@/lib/db/types';
 
@@ -32,7 +33,7 @@ function ProjectLink({ project, onNavigate }: { project: Project; onNavigate: ()
 
 export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
   const me = useCurrentUser();
-  const isAdmin = me.role === 'admin';
+  const canCreate = canCreateProjects(me);
   const { data: projects = [] } = useQuery(listProjects, `projects:${me.id}`);
   const [creating, setCreating] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -74,7 +75,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
           <div className="mb-1 mt-6 flex h-7 items-center justify-between px-3">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Shared projects</span>
-            {isAdmin && (
+            {canCreate && (
               <button className="icon-btn h-7 w-7" onClick={() => setCreating(true)} aria-label="New project" title="New project">
                 <Plus className="h-4 w-4" />
               </button>
@@ -83,7 +84,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           <div className="space-y-0.5">
             {active.map((p) => <ProjectLink key={p.id} project={p} onNavigate={onClose} />)}
           </div>
-          {isAdmin ? (
+          {canCreate ? (
             <button
               onClick={() => setCreating(true)}
               className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
@@ -93,7 +94,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           ) : (
             active.length === 0 && (
               <p className="px-3 py-2 text-xs leading-relaxed text-slate-400">
-                Shared projects show up here once an admin adds you to them.
+                Projects show up here once a governor gives you access.
               </p>
             )
           )}

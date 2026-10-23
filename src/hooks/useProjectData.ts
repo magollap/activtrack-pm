@@ -42,7 +42,7 @@ async function loadProjectData(projectId: string, me: Member): Promise<ProjectDa
   }
   const memberIds = new Set(memberships.map((m) => m.userId));
   const members = profiles.filter((p) =>
-    project.isPersonal ? p.id === project.ownerId : !p.disabled && (p.role === 'admin' || memberIds.has(p.id)),
+    project.isPersonal ? p.id === project.ownerId : !p.disabled && (p.role === 'governor' || p.id === project.createdBy || memberIds.has(p.id)),
   );
   return { project, statuses, tasks, members, checklist, access: projectAccess(project, me, memberships) };
 }

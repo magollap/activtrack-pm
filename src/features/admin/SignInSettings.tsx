@@ -50,6 +50,7 @@ export function SignInSettings() {
   const [draft, setDraft] = useState<AuthSettings | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [groupsText, setGroupsText] = useState('');
+  const [delegateText, setDelegateText] = useState('');
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
 
@@ -60,7 +61,8 @@ export function SignInSettings() {
       .then((settings) => {
         if (!active) return;
         setDraft(settings);
-        setGroupsText(settings.ldap.adminGroups.join('\n'));
+        setGroupsText(settings.ldap.governorGroups.join('\n'));
+        setDelegateText(settings.ldap.delegateGroups.join('\n'));
       })
       .catch((e: unknown) => active && setLoadError(errorMessage(e)));
     return () => {
@@ -75,7 +77,11 @@ export function SignInSettings() {
   const setLdap = (patch: Partial<LdapSettings>) => setDraft({ ...draft, ldap: { ...draft.ldap, ...patch } });
   const current = (): AuthSettings => ({
     ...draft,
-    ldap: { ...draft.ldap, adminGroups: groupsText.split('\n').map((g) => g.trim()).filter(Boolean) },
+    ldap: {
+      ...draft.ldap,
+      governorGroups: groupsText.split('\n').map((g) => g.trim()).filter(Boolean),
+      delegateGroups: delegateText.split('\n').map((g) => g.trim()).filter(Boolean),
+    },
   });
 
   const save = async (e: React.FormEvent) => {
@@ -150,7 +156,16 @@ export function SignInSettings() {
           {field('nameAttribute', 'Name attribute', 'displayName')}
           {field('emailAttribute', 'Email attribute', 'mail')}
           <div className="sm:col-span-2">
-            <label className="label" htmlFor="ldap-groups">Admin groups</label>
+            <label className="label" htmlFor="ldap-delegate-groups">Delegate groups</label>
+            <textarea
+              id="ldap-delegate-groups"
+              className="input mb-4 min-h-[88px] font-mono text-sm"
+              value={delegateText}
+              onChange={(e) => setDelegateText(e.target.value)}
+              placeholder={'workday-project-managers'}
+              spellCheck={false}
+            />
+            <label className="label" htmlFor="ldap-groups">Governor groups</label>
             <textarea
               id="ldap-groups"
               className="input min-h-[88px] font-mono text-sm"
@@ -160,7 +175,7 @@ export function SignInSettings() {
               spellCheck={false}
             />
             <p className="mt-1 text-xs text-slate-500">
-              One group per line, by name or full path. Members become Workday admins and everyone else gets a basic account; this is checked at every sign-in. Leave empty to manage roles in Workday instead.
+              One group per line, by name or full path. Governor groups win over delegate groups, and everyone else becomes a Reporter; this is checked at every sign-in. Leave empty to manage roles in Workday instead.
             </p>
           </div>
         </div>

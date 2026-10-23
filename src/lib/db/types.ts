@@ -6,7 +6,8 @@ export interface BaseRecord {
 
 export type NewRecord<T extends BaseRecord> = Omit<T, keyof BaseRecord>;
 
-export type Role = 'admin' | 'user';
+export const ROLES = ['governor', 'delegate', 'reporter'] as const;
+export type Role = (typeof ROLES)[number];
 export type AuthSource = 'local' | 'ldap';
 
 /** A person with an account. */
@@ -31,8 +32,11 @@ export interface Project extends BaseRecord {
 
 export const ACCESS_LEVELS = ['read', 'write', 'write_delete'] as const;
 export type AccessLevel = (typeof ACCESS_LEVELS)[number];
-/** What the signed-in person may do in a project; "manage" is admins and owners of a personal space. */
-export type ProjectAccess = AccessLevel | 'manage';
+/**
+ * What the signed-in person may do in a project: "manage" is governors and owners of a personal space,
+ * "lead" is a delegate in a project they created (everything except deleting the project).
+ */
+export type ProjectAccess = AccessLevel | 'lead' | 'manage';
 
 export interface ProjectMember extends BaseRecord {
   projectId: string;

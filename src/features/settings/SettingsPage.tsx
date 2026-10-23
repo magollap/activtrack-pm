@@ -21,7 +21,7 @@ export function SettingsPage() {
   const [params, setParams] = useSearchParams();
   const me = useCurrentUser();
   const { kind } = useAuth();
-  const tabs = TABS.filter((t) => (!t.admin || me.role === 'admin') && (!t.localOnly || kind === 'local'));
+  const tabs = TABS.filter((t) => (!t.admin || me.role === 'governor') && (!t.localOnly || kind === 'local'));
   const tab: TabId = tabs.find((t) => t.id === params.get('tab'))?.id ?? 'profile';
 
   return (

@@ -3,10 +3,10 @@ import { Modal } from '@/components/Modal';
 import { ErrorState, LoadingState } from '@/components/QueryStates';
 import { useQuery } from '@/hooks/useQuery';
 import { useToast } from '@/hooks/useToast';
-import { ACCESS_META } from '@/lib/db/access';
+import { ACCESS_META, grantableLevels } from '@/lib/db/access';
 import { listProjects } from '@/lib/db/projects';
 import { grantAccess, listMyMemberships, revokeAccess } from '@/lib/db/projectMembers';
-import { ACCESS_LEVELS, type AccessLevel, type Member } from '@/lib/db/types';
+import type { AccessLevel, Member } from '@/lib/db/types';
 
 async function loadAccess(userId: string) {
   const [projects, memberships] = await Promise.all([listProjects(), listMyMemberships(userId)]);
@@ -42,10 +42,14 @@ export function UserProjectsModal({ user, onClose }: { user: Member; onClose: ()
         <p className="py-4 text-center text-sm text-slate-500">There are no shared projects yet. Create one from the sidebar first.</p>
       ) : (
         <div className="space-y-3">
-          <p className="text-sm text-slate-500">{user.name} always has their own private space. Choose which shared projects they can open.</p>
+          <p className="text-sm text-slate-500">
+            {user.name} always has their own private space. Choose which shared projects they can open.
+            {user.role === 'reporter' && ' Reporters can only view.'}
+          </p>
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
             {data.projects.map((project) => {
               const access = data.memberships.find((m) => m.projectId === project.id)?.access ?? '';
+              const leads = user.role === 'delegate' && project.createdBy === user.id;
               return (
                 <li key={project.id} className="flex items-center gap-3 py-2.5">
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
@@ -53,16 +57,22 @@ export function UserProjectsModal({ user, onClose }: { user: Member; onClose: ()
                     {project.name}
                     {project.archivedAt && <span className="ml-2 text-xs font-normal text-slate-400">Archived</span>}
                   </span>
-                  <select
-                    className={`input w-auto py-1.5 text-sm ${access ? '' : 'text-slate-400'}`}
-                    value={access}
-                    disabled={busyId === project.id}
-                    onChange={(e) => void change(project.id, e.target.value as AccessLevel | '')}
-                    aria-label={`Access to ${project.name}`}
-                  >
-                    <option value="">No access</option>
-                    {ACCESS_LEVELS.map((a) => <option key={a} value={a}>{ACCESS_META[a].label}</option>)}
-                  </select>
+                  {leads ? (
+                    <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700 dark:bg-brand-950 dark:text-brand-300">
+                      {ACCESS_META.lead.label}
+                    </span>
+                  ) : (
+                    <select
+                      className={`input w-auto py-1.5 text-sm ${access ? '' : 'text-slate-400'}`}
+                      value={access && user.role === 'reporter' ? 'read' : access}
+                      disabled={busyId === project.id}
+                      onChange={(e) => void change(project.id, e.target.value as AccessLevel | '')}
+                      aria-label={`Access to ${project.name}`}
+                    >
+                      <option value="">No access</option>
+                      {grantableLevels(user.role).map((a) => <option key={a} value={a}>{ACCESS_META[a].label}</option>)}
+                    </select>
+                  )}
                 </li>
               );
             })}

@@ -19,13 +19,16 @@ const iso = (v) => typeof v === 'string' && v.length <= 40 && !Number.isNaN(Date
 const oneOf = (...values) => (v) => values.includes(v);
 const nullable = (check) => (v) => v === null || check(v);
 
-const WRITERS = ['write', 'write_delete', 'manage'];
+export const ROLES = ['governor', 'delegate', 'reporter'];
+const WRITERS = ['write', 'write_delete', 'lead', 'manage'];
+const MANAGERS = ['lead', 'manage'];
 const nowIso = () => new Date().toISOString();
 
 /** Per-request view of the data with the signed-in user's access, matching the online database rules. */
 export function createContext(store, me) {
   const db = store.data.collections;
-  const isAdmin = me.role === 'admin' && !me.disabled;
+  const isGovernor = me.role === 'governor' && !me.disabled;
+  const canCreateProjects = (me.role === 'governor' || me.role === 'delegate') && !me.disabled;
   const accessCache = new Map();
 
   const project = (projectId) => db.projects.find((p) => p.id === projectId);
@@ -37,8 +40,12 @@ export function createContext(store, me) {
     let result = null;
     if (p && !me.disabled) {
       if (p.isPersonal) result = p.ownerId === me.id ? 'manage' : null;
-      else if (isAdmin) result = 'manage';
-      else result = db.projectMembers.find((m) => m.projectId === p.id && m.userId === me.id)?.access ?? null;
+      else if (isGovernor) result = 'manage';
+      else if (me.role === 'delegate' && p.createdBy === me.id) result = 'lead';
+      else {
+        const granted = db.projectMembers.find((m) => m.projectId === p.id && m.userId === me.id)?.access ?? null;
+        result = granted && me.role === 'reporter' ? 'read' : granted;
+      }
     }
     accessCache.set(projectId, result);
     return result;
@@ -52,15 +59,16 @@ export function createContext(store, me) {
 
   let visibleProfiles = null;
   function canSeeProfile(targetId) {
-    if (targetId === me.id || isAdmin) return true;
+    if (targetId === me.id || isGovernor) return true;
     if (!visibleProfiles) {
       visibleProfiles = new Set();
-      const activeAdmins = db.profiles.filter((p) => p.role === 'admin' && !p.disabled).map((p) => p.id);
+      const activeGovernors = db.profiles.filter((p) => p.role === 'governor' && !p.disabled).map((p) => p.id);
       for (const p of db.projects) {
         if (access(p.id) === null) continue;
         if (p.ownerId) visibleProfiles.add(p.ownerId);
+        if (!p.isPersonal && p.createdBy) visibleProfiles.add(p.createdBy);
         db.projectMembers.filter((m) => m.projectId === p.id).forEach((m) => visibleProfiles.add(m.userId));
-        if (!p.isPersonal) activeAdmins.forEach((a) => visibleProfiles.add(a));
+        if (!p.isPersonal) activeGovernors.forEach((a) => visibleProfiles.add(a));
       }
     }
     return visibleProfiles.has(targetId);
@@ -81,25 +89,25 @@ export function createContext(store, me) {
       insert: {
         columns: ['name', 'description', 'color'],
         defaults: () => ({ description: '', color: '#0d9488', archivedAt: null, isPersonal: false, ownerId: null, createdBy: me.id }),
-        allow: () => isAdmin,
+        allow: () => canCreateProjects,
       },
-      update: { columns: ['name', 'description', 'color', 'archivedAt'], allow: (row) => access(row.id) === 'manage' },
-      remove: (row) => !row.isPersonal && access(row.id) === 'manage',
+      update: { columns: ['name', 'description', 'color', 'archivedAt'], allow: (row) => MANAGERS.includes(access(row.id)) },
+      remove: (row) => !row.isPersonal && isGovernor,
     },
     projectMembers: {
       fields: { projectId: id, userId: id, access: oneOf('read', 'write', 'write_delete') },
-      select: (row) => isAdmin || access(row.projectId) !== null,
+      select: (row) => isGovernor || access(row.projectId) !== null,
       insert: {
         columns: ['projectId', 'userId', 'access'],
         defaults: () => ({ access: 'write' }),
         allow: (row) =>
-          isAdmin &&
+          isGovernor &&
           project(row.projectId)?.isPersonal === false &&
           db.profiles.some((p) => p.id === row.userId) &&
           !db.projectMembers.some((m) => m.projectId === row.projectId && m.userId === row.userId),
       },
-      update: { columns: ['access'], allow: () => isAdmin },
-      remove: () => isAdmin,
+      update: { columns: ['access'], allow: () => isGovernor },
+      remove: () => isGovernor,
     },
     statuses: {
       fields: { projectId: id, name: str(40, 1), color, order: int, isDone: bool },
@@ -107,10 +115,10 @@ export function createContext(store, me) {
       insert: {
         columns: ['projectId', 'name', 'color', 'order', 'isDone'],
         defaults: () => ({ color: '#64748b', order: 0, isDone: false }),
-        allow: (row) => access(row.projectId) === 'manage',
+        allow: (row) => MANAGERS.includes(access(row.projectId)),
       },
-      update: { columns: ['name', 'color', 'order', 'isDone'], allow: (row) => access(row.projectId) === 'manage' },
-      remove: (row) => access(row.projectId) === 'manage',
+      update: { columns: ['name', 'color', 'order', 'isDone'], allow: (row) => MANAGERS.includes(access(row.projectId)) },
+      remove: (row) => MANAGERS.includes(access(row.projectId)),
     },
     tasks: {
       fields: {
@@ -138,7 +146,7 @@ export function createContext(store, me) {
       },
       remove: (row) => {
         const level = access(row.projectId);
-        return level === 'manage' || (level === 'write_delete' && row.createdBy === me.id);
+        return MANAGERS.includes(level) || (level === 'write_delete' && row.createdBy === me.id);
       },
     },
     checklistItems: {
@@ -162,7 +170,7 @@ export function createContext(store, me) {
       },
       update: { columns: ['body'], allow: (row) => row.authorId === me.id && taskAccess(row.taskId) !== null },
       remove: (row) =>
-        (row.authorId === me.id && taskAccess(row.taskId) !== null) || taskAccess(row.taskId) === 'manage',
+        (row.authorId === me.id && taskAccess(row.taskId) !== null) || MANAGERS.includes(taskAccess(row.taskId)),
     },
     taskHistory: {
       fields: {},
@@ -170,7 +178,7 @@ export function createContext(store, me) {
     },
   };
 
-  return { db, me, isAdmin, access, rules: RULES };
+  return { db, me, isGovernor, access, rules: RULES };
 }
 
 const denied = () => new HttpError(403, 'You do not have permission to do that.');
@@ -315,17 +323,17 @@ export function removeRows(ctx, collection, filter) {
   return doomed.length;
 }
 
-/** A brand-new account gets a profile and a private "My space"; the very first account is the admin. */
+/** A brand-new account gets a profile and a private "My space"; the very first account is the governor. */
 export function createAccount(store, { name, email, authSource, role }) {
   const db = store.data.collections;
   const now = nowIso();
-  const hasAdmin = db.profiles.some((p) => p.role === 'admin');
+  const hasGovernor = db.profiles.some((p) => p.role === 'governor');
   const profile = {
     id: randomUUID(),
     name: name.slice(0, 80) || 'User',
     email,
     color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
-    role: hasAdmin ? role : 'admin',
+    role: hasGovernor ? role : 'governor',
     disabled: false,
     authSource,
     createdAt: now,
@@ -351,22 +359,22 @@ export function createAccount(store, { name, email, authSource, role }) {
   return profile;
 }
 
-/** Same safeguards as the online database: admins only, and never zero active admins. */
+/** Same safeguards as the online database: governors only, and never zero active governors. */
 export function changeUser(store, me, targetId, role, disabled) {
-  if (me.role !== 'admin') throw new HttpError(403, 'Only admins can change accounts.');
-  if (!['admin', 'user'].includes(role) || typeof disabled !== 'boolean') throw new HttpError(400, 'Unknown role.');
+  if (me.role !== 'governor') throw new HttpError(403, 'Only governors can change accounts.');
+  if (!ROLES.includes(role) || typeof disabled !== 'boolean') throw new HttpError(400, 'Unknown role.');
   const db = store.data.collections;
   const target = db.profiles.find((p) => p.id === targetId);
   if (!target) throw new HttpError(404, 'This account no longer exists.');
-  if (targetId === me.id && (role !== 'admin' || disabled)) {
-    throw new HttpError(400, 'You cannot remove your own admin access or disable your own account.');
+  if (targetId === me.id && (role !== 'governor' || disabled)) {
+    throw new HttpError(400, 'You cannot remove your own governor role or disable your own account.');
   }
-  if (!wouldKeepAnAdmin(db, target, role, disabled)) throw new HttpError(400, 'Workday needs at least one active admin.');
+  if (!wouldKeepAGovernor(db, target, role, disabled)) throw new HttpError(400, 'Workday needs at least one active governor.');
   Object.assign(target, { role, disabled, updatedAt: nowIso() });
   return target;
 }
 
-export function wouldKeepAnAdmin(db, target, role, disabled) {
-  const losing = target.role === 'admin' && !target.disabled && (role !== 'admin' || disabled);
-  return !losing || db.profiles.some((p) => p.role === 'admin' && !p.disabled && p.id !== target.id);
+export function wouldKeepAGovernor(db, target, role, disabled) {
+  const losing = target.role === 'governor' && !target.disabled && (role !== 'governor' || disabled);
+  return !losing || db.profiles.some((p) => p.role === 'governor' && !p.disabled && p.id !== target.id);
 }

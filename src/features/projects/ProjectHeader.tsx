@@ -16,20 +16,21 @@ interface ProjectHeaderProps {
   statuses: Status[];
   taskCount: number;
   access: ProjectAccess | null;
-  isAdmin: boolean;
+  isGovernor: boolean;
 }
 
 type Dialog = 'edit' | 'workflow' | 'archive' | 'delete' | 'share' | null;
 
 const menuItem = 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700';
 
-export function ProjectHeader({ project, statuses, taskCount, access, isAdmin }: ProjectHeaderProps) {
+export function ProjectHeader({ project, statuses, taskCount, access, isGovernor }: ProjectHeaderProps) {
   const toast = useToast();
   const navigate = useNavigate();
   const [dialog, setDialog] = useState<Dialog>(null);
   const close = () => setDialog(null);
   const manage = canManage(access);
-  const shareable = isAdmin && !project.isPersonal;
+  const shareable = isGovernor && !project.isPersonal;
+  const deletable = isGovernor && !project.isPersonal;
 
   const restore = async () => {
     try {
@@ -58,7 +59,7 @@ export function ProjectHeader({ project, statuses, taskCount, access, isAdmin }:
                 <Lock className="h-3 w-3" /> Private
               </span>
             )}
-            {access && !manage && (
+            {access && access !== 'manage' && (
               <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300" title={ACCESS_META[access].description}>
                 {access === 'read' && <Eye className="h-3 w-3" />} {ACCESS_META[access].label}
               </span>
@@ -95,7 +96,7 @@ export function ProjectHeader({ project, statuses, taskCount, access, isAdmin }:
                 ) : (
                   <button className={menuItem} onClick={() => { closeMenu(); setDialog('archive'); }}><Archive className="h-4 w-4" /> Archive</button>
                 )}
-                {!project.isPersonal && (
+                {deletable && (
                   <>
                     <div className="my-1 h-px bg-slate-100 dark:bg-slate-700" />
                     <button className={`${menuItem} text-red-600 dark:text-red-400`} onClick={() => { closeMenu(); setDialog('delete'); }}><Trash2 className="h-4 w-4" /> Delete project</button>

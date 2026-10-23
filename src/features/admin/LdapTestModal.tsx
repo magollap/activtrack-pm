@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { CheckCircle2, FlaskConical, ShieldCheck, User } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { backend } from '@/lib/backend';
+import { ROLE_META } from '@/lib/db/access';
 import { errorMessage } from '@/lib/errors';
 import type { AuthSettings, LdapTestResult } from '@/lib/backend/types';
 
@@ -55,7 +56,7 @@ export function LdapTestModal({ settings, onClose }: { settings: AuthSettings; o
             <p className="flex items-center gap-2 font-medium"><CheckCircle2 className="h-4 w-4" /> Sign-in works</p>
             <p className="flex items-center gap-2"><User className="h-4 w-4" /> {result.name} ({result.email || 'no email found'})</p>
             <p className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4" /> Would sign in as {result.role === 'admin' ? 'an admin' : 'a basic member'}
+              <ShieldCheck className="h-4 w-4" /> Would sign in as {ROLE_META[result.role].label}
             </p>
             <p className="text-xs opacity-80">
               {result.groups.length ? `Groups: ${result.groups.join(', ')}` : 'No groups were found for this person.'}

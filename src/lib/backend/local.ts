@@ -90,6 +90,10 @@ export function createLocalBackend(): Backend {
       };
     },
 
+    async adminCreateUser(user) {
+      await call('admin/users/create', user);
+    },
+
     async adminUpdateUser(userId, role, disabled) {
       await call('admin/users/update', { userId, role, disabled });
     },

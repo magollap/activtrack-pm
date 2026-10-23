@@ -12,19 +12,27 @@ const asStrings = (value) =>
 
 const groupName = (dn) => /^[^=]+=([^,]+)/.exec(dn)?.[1] ?? dn;
 
-export function isAdminByGroups(groups, adminGroups) {
-  const wanted = adminGroups.map((g) => g.trim().toLowerCase()).filter(Boolean);
+function inAnyGroup(groups, configured) {
+  const wanted = configured.map((g) => g.trim().toLowerCase()).filter(Boolean);
   return groups.some((dn) => {
     const lower = dn.toLowerCase();
     return wanted.includes(lower) || wanted.includes(groupName(lower));
   });
 }
 
+export const groupsMapped = (ldap) => ldap.governorGroups.length > 0 || ldap.delegateGroups.length > 0;
+
+export function roleFromGroups(groups, ldap) {
+  if (inAnyGroup(groups, ldap.governorGroups)) return 'governor';
+  if (inAnyGroup(groups, ldap.delegateGroups)) return 'delegate';
+  return 'reporter';
+}
+
 function unreachable(error) {
   console.error('LDAP error:', error.message);
   return new HttpError(
     503,
-    'The directory (LDAP) server could not be reached. Administrators can still sign in with a Workday password.',
+    'The directory (LDAP) server could not be reached. Governors can still sign in with a Workday password.',
   );
 }
 

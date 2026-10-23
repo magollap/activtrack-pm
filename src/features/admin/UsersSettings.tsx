@@ -1,15 +1,17 @@
 import { useState } from 'react';
-import { FolderKey, KeyRound, Network, ShieldCheck, UserCheck, UserX } from 'lucide-react';
+import { FolderKey, KeyRound, Network, ShieldCheck, UserCheck, UserPlus, UserX } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ErrorState, LoadingState } from '@/components/QueryStates';
+import { AddUserModal } from '@/features/admin/AddUserModal';
 import { UserProjectsModal } from '@/features/admin/UserProjectsModal';
 import { useCurrentUser } from '@/features/auth/AuthProvider';
 import { useQuery } from '@/hooks/useQuery';
 import { useToast } from '@/hooks/useToast';
 import { listMembers } from '@/lib/db/members';
+import { ROLE_META } from '@/lib/db/access';
 import { adminUpdateUser } from '@/lib/db/users';
-import type { Member, Role } from '@/lib/db/types';
+import { ROLES, type Member, type Role } from '@/lib/db/types';
 
 export function UsersSettings() {
   const toast = useToast();
@@ -17,6 +19,7 @@ export function UsersSettings() {
   const { data: users, loading, error } = useQuery(listMembers, 'admin:users');
   const [projectsFor, setProjectsFor] = useState<Member | null>(null);
   const [disabling, setDisabling] = useState<Member | null>(null);
+  const [adding, setAdding] = useState(false);
 
   if (loading && !users) return <LoadingState />;
   if (error) return <ErrorState message={error} />;
@@ -35,11 +38,16 @@ export function UsersSettings() {
 
   return (
     <section className="card">
-      <header className="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-        <h3 className="font-semibold">Users</h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {users.length} account{users.length === 1 ? '' : 's'}, {active} active. People appear here after they sign up or sign in with the company directory.
-        </p>
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+        <div>
+          <h3 className="font-semibold">Users</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {users.length} account{users.length === 1 ? '' : 's'}, {active} active. Add people here, or let them sign up and set their role afterwards.
+          </p>
+        </div>
+        <button className="btn-primary" onClick={() => setAdding(true)}>
+          <UserPlus className="h-4 w-4" /> Add user
+        </button>
       </header>
       <ul>
         {users.map((user) => {
@@ -66,13 +74,14 @@ export function UsersSettings() {
                   disabled={isMe}
                   onChange={(e) => void update(user, e.target.value as Role, user.disabled)}
                   aria-label={`Role for ${user.name}`}
-                  title={isMe ? 'You cannot change your own role' : undefined}
+                  title={isMe ? 'You cannot change your own role' : ROLE_META[user.role].description}
                 >
-                  <option value="user">Member</option>
-                  <option value="admin">Admin</option>
+                  {ROLES.map((r) => (
+                    <option key={r} value={r}>{ROLE_META[r].label}</option>
+                  ))}
                 </select>
-                {user.role === 'admin' ? (
-                  <span className="icon-btn cursor-default text-brand-600" title="Admins have full control of every shared project">
+                {user.role === 'governor' ? (
+                  <span className="icon-btn cursor-default text-brand-600" title="Governors have full control of every shared project">
                     <ShieldCheck className="h-4 w-4" />
                   </span>
                 ) : (
@@ -99,6 +108,7 @@ export function UsersSettings() {
       <p className="border-t border-slate-100 px-5 py-3 text-xs text-slate-500 dark:border-slate-800">
         Directory users get their role from the directory groups you list under Sign-in, so a role change here is replaced at their next sign-in.
       </p>
+      {adding && <AddUserModal onClose={() => setAdding(false)} />}
       {projectsFor && <UserProjectsModal user={projectsFor} onClose={() => setProjectsFor(null)} />}
       {disabling && (
         <ConfirmDialog

@@ -13,7 +13,7 @@ import { ListView } from '@/features/list/ListView';
 import { CalendarView } from '@/features/calendar/CalendarView';
 import { useProjectData } from '@/hooks/useProjectData';
 import { useCurrentUser } from '@/features/auth/AuthProvider';
-import { canWrite } from '@/lib/db/access';
+import { canWrite, isGovernor } from '@/lib/db/access';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { applyFilters, countActiveFilters } from '@/lib/filters';
 import { EMPTY_FILTERS, getProjectView, setProjectView, type ProjectView } from '@/lib/prefs';
@@ -66,7 +66,7 @@ export function ProjectPage() {
   return (
     <div className="flex min-h-full flex-col">
       <div className="space-y-4 px-4 pb-4 pt-6 sm:px-6">
-        <ProjectHeader project={project} statuses={statuses} taskCount={tasks.length} access={access} isAdmin={me.role === 'admin'} />
+        <ProjectHeader project={project} statuses={statuses} taskCount={tasks.length} access={access} isGovernor={isGovernor(me)} />
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <ViewSwitcher view={view} onChange={changeView} />
           <FilterToolbar filters={filters} onChange={setFilters} statuses={statuses} members={members} />

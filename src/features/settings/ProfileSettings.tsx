@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { KeyRound, Network, Save, ShieldCheck, User } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
+import { ROLE_META } from '@/lib/db/access';
 import { ColorPicker } from '@/components/ColorPicker';
 import { useCurrentUser } from '@/features/auth/AuthProvider';
 import { useToast } from '@/hooks/useToast';
@@ -39,8 +40,8 @@ export function ProfileSettings() {
       <div className="space-y-5 p-5">
         <div className="flex flex-wrap gap-2 text-xs">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 font-medium dark:bg-slate-800">
-            {me.role === 'admin' ? <ShieldCheck className="h-3.5 w-3.5 text-brand-600" /> : <User className="h-3.5 w-3.5" />}
-            {me.role === 'admin' ? 'Admin' : 'Member'}
+            {me.role === 'governor' ? <ShieldCheck className="h-3.5 w-3.5 text-brand-600" /> : <User className="h-3.5 w-3.5" />}
+            {ROLE_META[me.role].label}
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 font-medium dark:bg-slate-800">
             {me.authSource === 'ldap' ? <Network className="h-3.5 w-3.5" /> : <KeyRound className="h-3.5 w-3.5" />}

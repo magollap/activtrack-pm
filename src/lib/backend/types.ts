@@ -24,7 +24,8 @@ export interface LdapSettings {
   userFilter: string;
   nameAttribute: string;
   emailAttribute: string;
-  adminGroups: string[];
+  governorGroups: string[];
+  delegateGroups: string[];
 }
 
 export interface AuthSettings {
@@ -39,6 +40,13 @@ export interface LdapTestResult {
   email: string;
   role: Role;
   groups: string[];
+}
+
+export interface NewUser {
+  name: string;
+  email: string;
+  password: string;
+  role: Role;
 }
 
 export interface Backend {
@@ -56,6 +64,7 @@ export interface Backend {
   signOut(): Promise<void>;
   onAuthChange(listener: () => void): () => void;
 
+  adminCreateUser(user: NewUser): Promise<void>;
   adminUpdateUser(userId: string, role: Role, disabled: boolean): Promise<void>;
   getAuthSettings(): Promise<AuthSettings>;
   saveAuthSettings(settings: AuthSettings): Promise<void>;

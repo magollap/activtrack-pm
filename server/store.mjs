@@ -32,7 +32,8 @@ export function defaultSettings() {
       userFilter: '(|(uid={{username}})(sAMAccountName={{username}})(mail={{username}}))',
       nameAttribute: 'displayName',
       emailAttribute: 'mail',
-      adminGroups: [],
+      governorGroups: [],
+      delegateGroups: [],
     },
   };
 }
@@ -47,16 +48,23 @@ function emptyData() {
   };
 }
 
+const LEGACY_ROLES = { admin: 'governor', user: 'reporter' };
+
 function normalize(raw) {
   const data = emptyData();
   if (typeof raw !== 'object' || raw === null) return data;
   for (const name of COLLECTIONS) {
     if (Array.isArray(raw.collections?.[name])) data.collections[name] = raw.collections[name];
   }
+  for (const profile of data.collections.profiles) {
+    if (LEGACY_ROLES[profile.role]) profile.role = LEGACY_ROLES[profile.role];
+  }
   if (Array.isArray(raw.credentials)) data.credentials = raw.credentials;
   if (typeof raw.sessions === 'object' && raw.sessions !== null) data.sessions = raw.sessions;
   const settings = raw.settings ?? {};
-  data.settings = { ...data.settings, ...settings, ldap: { ...data.settings.ldap, ...(settings.ldap ?? {}) } };
+  const { adminGroups, ...savedLdap } = settings.ldap ?? {};
+  data.settings = { ...data.settings, ...settings, ldap: { ...data.settings.ldap, ...savedLdap } };
+  if (Array.isArray(adminGroups) && !savedLdap.governorGroups) data.settings.ldap.governorGroups = adminGroups;
   return data;
 }
 

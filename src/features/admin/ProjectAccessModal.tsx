@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { ShieldCheck, UserPlus, X } from 'lucide-react';
+import { ShieldCheck, UserCog, UserPlus, X } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { Modal } from '@/components/Modal';
 import { ErrorState, LoadingState } from '@/components/QueryStates';
 import { useQuery } from '@/hooks/useQuery';
 import { useToast } from '@/hooks/useToast';
-import { ACCESS_META } from '@/lib/db/access';
+import { ACCESS_META, grantableLevels } from '@/lib/db/access';
 import { listMembers } from '@/lib/db/members';
 import { grantAccess, listProjectMembers, revokeAccess } from '@/lib/db/projectMembers';
 import { ACCESS_LEVELS, type AccessLevel, type Project } from '@/lib/db/types';
@@ -22,19 +22,26 @@ export function ProjectAccessModal({ project, onClose }: { project: Project; onC
   const [newAccess, setNewAccess] = useState<AccessLevel>('write');
   const [busy, setBusy] = useState(false);
 
-  const { admins, rows, candidates } = useMemo(() => {
+  const { governors, lead, rows, candidates } = useMemo(() => {
     const users = data?.users ?? [];
     const byId = new Map(users.map((u) => [u.id, u]));
     const memberIds = new Set(data?.memberships.map((m) => m.userId));
+    const projectLead = users.find((u) => u.id === project.createdBy && u.role === 'delegate');
+    const listed = (u: { id: string; role: string }) => u.role !== 'governor' && u.id !== projectLead?.id;
     return {
-      admins: users.filter((u) => u.role === 'admin' && !u.disabled),
+      governors: users.filter((u) => u.role === 'governor' && !u.disabled),
+      lead: projectLead,
       rows: (data?.memberships ?? [])
         .map((m) => ({ membership: m, user: byId.get(m.userId) }))
-        .filter((r) => r.user && r.user.role !== 'admin')
+        .filter((r) => r.user && listed(r.user))
         .sort((a, b) => (a.user?.name ?? '').localeCompare(b.user?.name ?? '')),
-      candidates: users.filter((u) => u.role !== 'admin' && !u.disabled && !memberIds.has(u.id)),
+      candidates: users.filter((u) => listed(u) && !u.disabled && !memberIds.has(u.id)),
     };
-  }, [data]);
+  }, [data, project.createdBy]);
+
+  const newUser = candidates.find((u) => u.id === newUserId);
+  const newLevels = newUser ? grantableLevels(newUser.role) : ACCESS_LEVELS;
+  const effectiveNewAccess = newLevels.includes(newAccess) ? newAccess : newLevels[0];
 
   const run = async (action: () => Promise<void>, message: string) => {
     setBusy(true);
@@ -52,7 +59,7 @@ export function ProjectAccessModal({ project, onClose }: { project: Project; onC
     e.preventDefault();
     if (!newUserId) return;
     void run(async () => {
-      await grantAccess(project.id, newUserId, newAccess);
+      await grantAccess(project.id, newUserId, effectiveNewAccess);
       setNewUserId('');
     }, 'Person added to project');
   };
@@ -75,8 +82,8 @@ export function ProjectAccessModal({ project, onClose }: { project: Project; onC
                   <option value="">Choose a person...</option>
                   {candidates.map((u) => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}
                 </select>
-                <select className="input sm:w-56" value={newAccess} onChange={(e) => setNewAccess(e.target.value as AccessLevel)} aria-label="Access level">
-                  {ACCESS_LEVELS.map((a) => <option key={a} value={a}>{ACCESS_META[a].label}</option>)}
+                <select className="input sm:w-56" value={effectiveNewAccess} onChange={(e) => setNewAccess(e.target.value as AccessLevel)} aria-label="Access level">
+                  {newLevels.map((a) => <option key={a} value={a}>{ACCESS_META[a].label}</option>)}
                 </select>
                 <button className="btn-primary" disabled={!newUserId || busy}><UserPlus className="h-4 w-4" /> Add</button>
               </div>
@@ -87,7 +94,7 @@ export function ProjectAccessModal({ project, onClose }: { project: Project; onC
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Members</p>
             {rows.length === 0 ? (
               <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-500 dark:border-slate-700">
-                Nobody has been added yet. Only admins can see this project.
+                Nobody has been added yet. Only governors{lead ? ' and the project lead' : ''} can see this project.
               </p>
             ) : (
               <ul className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -105,7 +112,7 @@ export function ProjectAccessModal({ project, onClose }: { project: Project; onC
                       onChange={(e) => void run(() => grantAccess(project.id, membership.userId, e.target.value as AccessLevel), 'Access updated')}
                       aria-label={`Access for ${user?.name}`}
                     >
-                      {ACCESS_LEVELS.map((a) => <option key={a} value={a}>{ACCESS_META[a].label}</option>)}
+                      {user && grantableLevels(user.role).map((a) => <option key={a} value={a}>{ACCESS_META[a].label}</option>)}
                     </select>
                     <button
                       className="icon-btn hover:text-red-600"
@@ -122,11 +129,20 @@ export function ProjectAccessModal({ project, onClose }: { project: Project; onC
             )}
           </div>
 
-          {admins.length > 0 && (
+          {lead && (
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Admins (always full control)</p>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Project lead</p>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 py-1 pl-1 pr-2.5 text-xs dark:bg-slate-800">
+                <Avatar member={lead} size="xs" /> {lead.name} <UserCog className="h-3 w-3 text-brand-600" />
+              </span>
+            </div>
+          )}
+
+          {governors.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Governors (always full control)</p>
               <div className="flex flex-wrap gap-2">
-                {admins.map((a) => (
+                {governors.map((a) => (
                   <span key={a.id} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 py-1 pl-1 pr-2.5 text-xs dark:bg-slate-800">
                     <Avatar member={a} size="xs" /> {a.name} <ShieldCheck className="h-3 w-3 text-brand-600" />
                   </span>

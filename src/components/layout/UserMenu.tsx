@@ -31,7 +31,7 @@ export function UserMenu() {
           <div className="px-3 py-2.5">
             <p className="flex items-center gap-1.5 truncate text-sm font-semibold">
               {me.name}
-              {me.role === 'admin' && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-brand-600" aria-label="Admin" />}
+              {me.role === 'governor' && <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-brand-600" aria-label="Governor" />}
             </p>
             <p className="truncate text-xs text-slate-500 dark:text-slate-400">{me.email}</p>
           </div>

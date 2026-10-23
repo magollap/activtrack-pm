@@ -144,6 +144,22 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
       return () => data.subscription.unsubscribe();
     },
 
+    async adminCreateUser(user) {
+      const { data, error } = await supabase.functions.invoke<{ id?: string; error?: string }>('admin-create-user', { body: user });
+      if (error) {
+        let message = 'Could not create the account.';
+        const context: unknown = (error as { context?: unknown }).context;
+        if (context instanceof Response) {
+          const body: unknown = await context.json().catch(() => null);
+          if (typeof body === 'object' && body !== null && typeof (body as { error?: unknown }).error === 'string') {
+            message = (body as { error: string }).error;
+          }
+        }
+        throw new Error(message);
+      }
+      if (!data || typeof data.id !== 'string') throw new Error('Could not create the account.');
+    },
+
     async adminUpdateUser(userId, role, disabled) {
       const { error } = await supabase.rpc('admin_update_user', {
         target_id: userId,
