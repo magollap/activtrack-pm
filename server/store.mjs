@@ -11,6 +11,8 @@ export const COLLECTIONS = [
   'checklistItems',
   'comments',
   'taskHistory',
+  'customFields',
+  'projectTemplates',
 ];
 
 const APP_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));

@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 import { ChecklistSection } from '@/features/tasks/ChecklistSection';
+import { TaskFieldsSection } from '@/features/fields/TaskFieldsSection';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 import { useToast } from '@/hooks/useToast';
 import { updateTask, type TaskPatch } from '@/lib/db/tasks';
 import { PRIORITY_META } from '@/lib/priority';
 import { dueTone } from '@/lib/dates';
-import { PRIORITIES, type Member, type Priority, type Status, type Task } from '@/lib/db/types';
+import { PRIORITIES, type CustomField, type Member, type Priority, type Status, type Task } from '@/lib/db/types';
 
 interface TaskDetailsTabProps {
   task: Task;
   statuses: Status[];
   members: Member[];
+  fields: CustomField[];
   editable: boolean;
+  onManageFields?: () => void;
 }
 
 const DUE_TONE_CLASS = {
@@ -21,7 +24,7 @@ const DUE_TONE_CLASS = {
   normal: '',
 };
 
-export function TaskDetailsTab({ task, statuses, members, editable }: TaskDetailsTabProps) {
+export function TaskDetailsTab({ task, statuses, members, fields, editable, onManageFields }: TaskDetailsTabProps) {
   const toast = useToast();
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
@@ -104,6 +107,8 @@ export function TaskDetailsTab({ task, statuses, members, editable }: TaskDetail
         </div>
         {datesInverted && <p className="text-xs text-amber-600 dark:text-amber-400 sm:col-span-2">The start date is after the due date.</p>}
       </div>
+
+      <TaskFieldsSection task={task} fields={fields} editable={editable} onManage={onManageFields} />
 
       <div>
         <label className="label" htmlFor="task-description">Description</label>

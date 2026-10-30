@@ -30,9 +30,12 @@ export async function listProjects(): Promise<Project[]> {
 
 export const getProject = (id: string): Promise<Project | null> => table('projects').find(id);
 
-export async function createProject(input: ProjectInput): Promise<Project> {
+export async function createProject(
+  input: ProjectInput,
+  statuses: { name: string; color: string; isDone: boolean }[] = DEFAULT_STATUSES,
+): Promise<Project> {
   const project = await table('projects').insert(clean(input));
-  await table('statuses').insertMany(DEFAULT_STATUSES.map((s, order) => ({ ...s, projectId: project.id, order })));
+  await table('statuses').insertMany(statuses.map((s, order) => ({ ...s, projectId: project.id, order })));
   return project;
 }
 

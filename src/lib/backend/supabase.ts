@@ -11,6 +11,8 @@ const TABLES: Record<CollectionName, string> = {
   checklistItems: 'checklist_items',
   comments: 'comments',
   taskHistory: 'task_history',
+  customFields: 'custom_fields',
+  projectTemplates: 'project_templates',
 };
 
 const FROM_TABLE: Record<string, CollectionName> = Object.fromEntries(

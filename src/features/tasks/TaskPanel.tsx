@@ -6,17 +6,19 @@ import { LoadingState } from '@/components/QueryStates';
 import { TaskDetailsTab } from '@/features/tasks/TaskDetailsTab';
 import { CommentsTab } from '@/features/comments/CommentsTab';
 import { HistoryTab } from '@/features/tasks/HistoryTab';
+import { FieldsModal } from '@/features/fields/FieldsModal';
 import { useQuery } from '@/hooks/useQuery';
 import { useToast } from '@/hooks/useToast';
 import { deleteTask, duplicateTask, getTask } from '@/lib/db/tasks';
 import { canDeleteTask, canManage, canWrite } from '@/lib/db/access';
 import { useCurrentUser } from '@/features/auth/AuthProvider';
-import type { Member, ProjectAccess, Status } from '@/lib/db/types';
+import type { CustomField, Member, ProjectAccess, Status } from '@/lib/db/types';
 
 interface TaskPanelProps {
   taskId: string;
   statuses: Status[];
   members: Member[];
+  fields: CustomField[];
   access: ProjectAccess | null;
   onClose: () => void;
 }
@@ -28,19 +30,20 @@ const TABS: { id: Tab; label: string; icon: typeof History }[] = [
   { id: 'history', label: 'History', icon: History },
 ];
 
-export function TaskPanel({ taskId, statuses, members, access, onClose }: TaskPanelProps) {
+export function TaskPanel({ taskId, statuses, members, fields, access, onClose }: TaskPanelProps) {
   const toast = useToast();
   const me = useCurrentUser();
   const editable = canWrite(access);
   const { data: task, loading } = useQuery(() => getTask(taskId), `task:${taskId}`);
   const [tab, setTab] = useState<Tab>('details');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [managingFields, setManagingFields] = useState(false);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !confirmDelete && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !confirmDelete && !managingFields && onClose();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose, confirmDelete]);
+  }, [onClose, confirmDelete, managingFields]);
 
   const status = statuses.find((s) => s.id === task?.statusId);
   const [, setSearchParams] = useSearchParams();
@@ -122,7 +125,16 @@ export function TaskPanel({ taskId, statuses, members, access, onClose }: TaskPa
               ))}
             </nav>
             <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-              {tab === 'details' && <TaskDetailsTab task={task} statuses={statuses} members={members} editable={editable} />}
+              {tab === 'details' && (
+                <TaskDetailsTab
+                  task={task}
+                  statuses={statuses}
+                  members={members}
+                  fields={fields}
+                  editable={editable}
+                  onManageFields={canManage(access) ? () => setManagingFields(true) : undefined}
+                />
+              )}
               {tab === 'comments' && <CommentsTab taskId={task.id} members={members} editable={editable} manage={canManage(access)} />}
               {tab === 'history' && <HistoryTab taskId={task.id} />}
             </div>
@@ -130,6 +142,7 @@ export function TaskPanel({ taskId, statuses, members, access, onClose }: TaskPa
         )}
       </aside>
 
+      {managingFields && task && <FieldsModal projectId={task.projectId} fields={fields} onClose={() => setManagingFields(false)} />}
       {confirmDelete && task && (
         <ConfirmDialog
           title="Delete task?"

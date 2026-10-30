@@ -67,6 +67,62 @@ export interface Task extends BaseRecord {
   order: number;
   completedAt: string | null;
   createdBy: string | null;
+  /** Custom field values keyed by field id. Missing on databases that predate custom fields. */
+  customValues?: Record<string, FieldValue>;
+}
+
+export const FIELD_TYPES = ['text', 'number', 'date', 'select', 'checkbox', 'url'] as const;
+export type FieldType = (typeof FIELD_TYPES)[number];
+export type FieldValue = string | number | boolean | null;
+
+export interface FieldOption {
+  id: string;
+  label: string;
+  color: string;
+}
+
+/** A project-specific field shown on every card in that project. */
+export interface CustomField extends BaseRecord {
+  projectId: string;
+  name: string;
+  type: FieldType;
+  options: FieldOption[];
+  order: number;
+  showOnCard: boolean;
+}
+
+export interface TemplateField {
+  name: string;
+  type: FieldType;
+  options: FieldOption[];
+  showOnCard: boolean;
+}
+
+export interface TemplateTask {
+  title: string;
+  description?: string;
+  priority?: Priority;
+  /** Index into the template's statuses. */
+  status: number;
+  checklist?: string[];
+  /** Due date as days after the project is created. */
+  dueInDays?: number | null;
+  /** Field values keyed by the field's index in the template. */
+  values?: Record<string, FieldValue>;
+}
+
+export interface TemplateData {
+  statuses: { name: string; color: string; isDone: boolean }[];
+  fields: TemplateField[];
+  tasks: TemplateTask[];
+}
+
+export interface ProjectTemplate extends BaseRecord {
+  name: string;
+  description: string;
+  color: string;
+  data: TemplateData;
+  createdBy: string | null;
 }
 
 export interface ChecklistItem extends BaseRecord {
@@ -101,6 +157,8 @@ export interface Collections {
   checklistItems: ChecklistItem;
   comments: Comment;
   taskHistory: TaskHistoryEntry;
+  customFields: CustomField;
+  projectTemplates: ProjectTemplate;
 }
 
 export type CollectionName = keyof Collections;
@@ -114,4 +172,6 @@ export const COLLECTION_NAMES: CollectionName[] = [
   'checklistItems',
   'comments',
   'taskHistory',
+  'customFields',
+  'projectTemplates',
 ];

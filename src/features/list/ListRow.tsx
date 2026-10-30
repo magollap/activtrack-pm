@@ -1,14 +1,16 @@
 import { Avatar } from '@/components/Avatar';
 import { DueDate } from '@/components/DueDate';
 import { PriorityBadge } from '@/components/PriorityBadge';
+import { FieldChips } from '@/components/FieldChips';
 import { useToast } from '@/hooks/useToast';
 import { updateTask, type TaskPatch } from '@/lib/db/tasks';
-import type { Member, Status, Task } from '@/lib/db/types';
+import type { CustomField, Member, Status, Task } from '@/lib/db/types';
 
 interface ListRowProps {
   task: Task;
   statuses: Status[];
   members: Member[];
+  fields: CustomField[];
   isDone: boolean;
   editable: boolean;
   selected: boolean;
@@ -19,7 +21,7 @@ interface ListRowProps {
 const inlineSelect =
   'w-full truncate rounded-md border border-transparent bg-transparent px-1.5 py-1 text-sm hover:border-slate-200 focus:border-brand-500 focus:outline-none disabled:appearance-none disabled:hover:border-transparent dark:hover:border-slate-700';
 
-export function ListRow({ task, statuses, members, isDone, editable, selected, onSelect, onOpen }: ListRowProps) {
+export function ListRow({ task, statuses, members, fields, isDone, editable, selected, onSelect, onOpen }: ListRowProps) {
   const toast = useToast();
   const assignee = members.find((m) => m.id === task.assigneeId);
 
@@ -46,6 +48,7 @@ export function ListRow({ task, statuses, members, isDone, editable, selected, o
         <button onClick={onOpen} className={`truncate text-left text-sm font-medium hover:text-brand-700 dark:hover:text-brand-300 ${isDone ? 'text-slate-400 line-through' : ''}`}>
           {task.title}
         </button>
+        <span className="hidden min-w-0 shrink items-center gap-1.5 overflow-hidden lg:flex"><FieldChips task={task} fields={fields} limit={2} /></span>
       </div>
       <div className="md:order-none">
         <select className={inlineSelect} value={task.statusId} disabled={!editable} onChange={(e) => save({ statusId: e.target.value })} aria-label="Status">

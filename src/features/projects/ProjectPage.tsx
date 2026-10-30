@@ -77,16 +77,16 @@ export function ProjectPage() {
     );
   }
 
-  const { project, statuses, tasks, members, checklist, access } = data;
+  const { project, statuses, tasks, members, checklist, access, fields } = data;
   const editable = canWrite(access);
-  const viewProps = { projectId, statuses, tasks: visibleTasks, members, checklist, editable, onOpenTask: openTask };
+  const viewProps = { projectId, statuses, tasks: visibleTasks, members, checklist, fields, editable, onOpenTask: openTask };
   const firstOpenStatus = statuses.find((s) => !s.isDone) ?? statuses[0];
   const filtered = countActiveFilters(filters) > 0;
 
   return (
     <div className="flex min-h-full flex-col">
       <div className="space-y-4 px-4 pb-4 pt-6 sm:px-6">
-        <ProjectHeader project={project} statuses={statuses} taskCount={tasks.length} access={access} isGovernor={isGovernor(me)} />
+        <ProjectHeader project={project} statuses={statuses} fields={fields} taskCount={tasks.length} access={access} isGovernor={isGovernor(me)} />
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <ViewSwitcher view={view} onChange={changeView} />
           <FilterToolbar filters={filters} onChange={setFilters} statuses={statuses} members={members} />
@@ -135,7 +135,7 @@ export function ProjectPage() {
       </div>
 
       {openTaskId && (
-        <TaskPanel key={openTaskId} taskId={openTaskId} statuses={statuses} members={members} access={access} onClose={closeTask} />
+        <TaskPanel key={openTaskId} taskId={openTaskId} statuses={statuses} members={members} fields={fields} access={access} onClose={closeTask} />
       )}
     </div>
   );

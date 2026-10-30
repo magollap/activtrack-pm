@@ -1,6 +1,6 @@
 import { table } from '@/lib/db/tables';
 import { parseDay } from '@/lib/dates';
-import { PRIORITIES, type Priority, type Status, type Task } from '@/lib/db/types';
+import { PRIORITIES, type FieldValue, type Priority, type Status, type Task } from '@/lib/db/types';
 
 export interface TaskInput {
   title: string;
@@ -10,11 +10,17 @@ export interface TaskInput {
   assigneeId?: string | null;
   startDate?: string | null;
   dueDate?: string | null;
+  customValues?: Record<string, FieldValue>;
 }
 
 export type TaskPatch = Partial<
-  Pick<Task, 'title' | 'description' | 'statusId' | 'priority' | 'assigneeId' | 'startDate' | 'dueDate'>
+  Pick<Task, 'title' | 'description' | 'statusId' | 'priority' | 'assigneeId' | 'startDate' | 'dueDate' | 'customValues'>
 >;
+
+function cleanValues(values: Record<string, FieldValue>): Record<string, FieldValue> {
+  if (JSON.stringify(values).length > 20000) throw new Error('These custom field values are too long.');
+  return values;
+}
 
 async function requireStatus(projectId: string, statusId: string): Promise<Status> {
   const status = await table('statuses').find(statusId);
@@ -64,6 +70,8 @@ export async function createTask(projectId: string, input: TaskInput): Promise<T
     dueDate: cleanDay(input.dueDate),
     order: await nextOrder(status.id),
     completedAt: status.isDone ? nowIso() : null,
+    // Only sent when used, so databases without the custom fields column keep working.
+    ...(input.customValues && Object.keys(input.customValues).length ? { customValues: cleanValues(input.customValues) } : {}),
   });
 }
 
@@ -82,6 +90,7 @@ export async function updateTask(id: string, patch: TaskPatch): Promise<Task> {
   if (patch.assigneeId !== undefined) next.assigneeId = patch.assigneeId || null;
   if (patch.startDate !== undefined) next.startDate = cleanDay(patch.startDate);
   if (patch.dueDate !== undefined) next.dueDate = cleanDay(patch.dueDate);
+  if (patch.customValues !== undefined) next.customValues = cleanValues(patch.customValues);
   if (patch.statusId !== undefined && patch.statusId !== task.statusId) {
     const status = await requireStatus(task.projectId, patch.statusId);
     next.statusId = status.id;
@@ -120,6 +129,7 @@ export async function duplicateTask(id: string): Promise<Task> {
     assigneeId: task.assigneeId,
     startDate: task.startDate,
     dueDate: task.dueDate,
+    customValues: task.customValues,
   });
   const items = (await table('checklistItems').list({ taskId: id })).sort((a, b) => a.order - b.order);
   await table('checklistItems').insertMany(items.map((item) => ({ taskId: copy.id, text: item.text, done: false, order: item.order })));

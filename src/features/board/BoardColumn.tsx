@@ -5,7 +5,7 @@ import { Plus } from 'lucide-react';
 import { SortableTaskCard } from '@/features/board/SortableTaskCard';
 import { QuickAdd } from '@/features/tasks/QuickAdd';
 import type { ChecklistCount } from '@/hooks/useProjectData';
-import type { Member, Status, Task } from '@/lib/db/types';
+import type { CustomField, Member, Status, Task } from '@/lib/db/types';
 
 interface BoardColumnProps {
   projectId: string;
@@ -14,11 +14,12 @@ interface BoardColumnProps {
   tasks: Map<string, Task>;
   members: Map<string, Member>;
   checklist: Map<string, ChecklistCount>;
+  fields: CustomField[];
   editable: boolean;
   onOpenTask: (taskId: string) => void;
 }
 
-export function BoardColumn({ projectId, status, taskIds, tasks, members, checklist, editable, onOpenTask }: BoardColumnProps) {
+export function BoardColumn({ projectId, status, taskIds, tasks, members, checklist, fields, editable, onOpenTask }: BoardColumnProps) {
   const [adding, setAdding] = useState(false);
   const { setNodeRef, isOver } = useDroppable({ id: status.id });
 
@@ -54,6 +55,7 @@ export function BoardColumn({ projectId, status, taskIds, tasks, members, checkl
                 assignee={task.assigneeId ? members.get(task.assigneeId) : undefined}
                 checklist={checklist.get(id)}
                 isDone={status.isDone}
+                fields={fields}
                 onOpen={() => onOpenTask(id)}
               />
             );

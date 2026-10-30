@@ -2,20 +2,22 @@ import { CheckCircle2, ListChecks } from 'lucide-react';
 import { Avatar } from '@/components/Avatar';
 import { DueDate } from '@/components/DueDate';
 import { PriorityBadge } from '@/components/PriorityBadge';
+import { FieldChips } from '@/components/FieldChips';
 import type { ChecklistCount } from '@/hooks/useProjectData';
-import type { Member, Task } from '@/lib/db/types';
+import type { CustomField, Member, Task } from '@/lib/db/types';
 
 interface TaskCardProps {
   task: Task;
   assignee: Member | undefined;
   checklist: ChecklistCount | undefined;
   isDone: boolean;
+  fields?: CustomField[];
   dragging?: boolean;
   overlay?: boolean;
   onOpen?: () => void;
 }
 
-export function TaskCard({ task, assignee, checklist, isDone, dragging, overlay, onOpen }: TaskCardProps) {
+export function TaskCard({ task, assignee, checklist, isDone, fields = [], dragging, overlay, onOpen }: TaskCardProps) {
   return (
     <div
       onClick={onOpen}
@@ -36,6 +38,7 @@ export function TaskCard({ task, assignee, checklist, isDone, dragging, overlay,
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <PriorityBadge priority={task.priority} />
+        <FieldChips task={task} fields={fields} />
         <DueDate dueDate={task.dueDate} isDone={isDone} />
         {checklist && checklist.total > 0 && (
           <span className={`inline-flex items-center gap-1 text-xs ${checklist.done === checklist.total ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
