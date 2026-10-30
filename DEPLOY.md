@@ -17,14 +17,12 @@ Total time: about 20 minutes.
 
 ## Step 1. Get your Supabase database ready
 
-### 1a. Where is your database?
+### 1a. Find your Supabase project
 
-Your project came from Bolt. Bolt uses one of two kinds of database, and the steps differ:
+Sign in at [supabase.com/dashboard](https://supabase.com/dashboard) and open the project that holds your ActivTrack tables (`projects`, `tasks`, `statuses` and so on, under **Table Editor**).
 
-| You see this in Bolt | What it means | What to do |
-| --- | --- | --- |
-| Your own Supabase project, listed at [supabase.com/dashboard](https://supabase.com/dashboard) | The database is already yours | Go to step 1b |
-| A **Bolt Database**, and nothing in your Supabase dashboard | Bolt hosts it for you | **Claim it**: in Bolt, open the project, click the **Database** icon at the top, then **Advanced → Claim**, and finish the steps in Supabase. This needs a Bolt Pro or Teams plan. If you cannot claim it, create a new Supabase project and follow step 1c to create the tables. |
+- Tables already there: go to step 1b.
+- No project yet, or the tables are missing: create a new project, then follow step 1c.
 
 ### 1b. Existing Supabase project: turn on live updates
 
