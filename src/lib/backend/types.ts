@@ -69,4 +69,9 @@ export interface Backend {
   getAuthSettings(): Promise<AuthSettings>;
   saveAuthSettings(settings: AuthSettings): Promise<void>;
   testLdap(settings: AuthSettings, username: string, password: string): Promise<LdapTestResult>;
+
+  /** Headers that prove who is calling our own /api endpoints (the AI assistant). */
+  apiHeaders(): Promise<Record<string, string>>;
+  /** Live updates: calls back with the collection whenever someone else changes data. Returns a stop function. */
+  watch(listener: (collection: CollectionName) => void): () => void;
 }

@@ -90,7 +90,7 @@ export async function openStore() {
         await writeFile(tmp, snapshot, { mode: 0o600 });
         await rename(tmp, FILE);
       })
-      .catch((error) => console.error('Could not save Workday data:', error.message));
+      .catch((error) => console.error('Could not save ActivTrack data:', error.message));
     return queue;
   };
 

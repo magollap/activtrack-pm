@@ -10,7 +10,7 @@ export function UpdateBanner() {
   if (!needRefresh) return null;
 
   return (
-    <div className="flex items-center justify-center gap-3 bg-brand-600 px-4 py-2 text-sm text-white" role="status">
+    <div className="flex items-center justify-center gap-3 bg-brand-700 px-4 py-2 text-sm text-white dark:bg-gold-500 dark:text-black" role="status">
       <span>New version available</span>
       <button
         onClick={() => updateServiceWorker(true)}

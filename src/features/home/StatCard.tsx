@@ -4,14 +4,14 @@ interface StatCardProps {
   label: string;
   value: number;
   icon: LucideIcon;
-  tone: 'brand' | 'amber' | 'red' | 'emerald';
+  tone: 'brand' | 'gold' | 'red' | 'info';
 }
 
 const TONES = {
   brand: 'bg-brand-50 text-brand-600 dark:bg-brand-950 dark:text-brand-400',
-  amber: 'bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400',
+  gold: 'bg-gold-50 text-gold-700 dark:bg-gold-950 dark:text-gold-400',
   red: 'bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400',
-  emerald: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400',
+  info: 'bg-info-50 text-info-600 dark:bg-info-950 dark:text-info-300',
 };
 
 export function StatCard({ label, value, icon: Icon, tone }: StatCardProps) {

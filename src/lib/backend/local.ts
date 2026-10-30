@@ -17,7 +17,7 @@ export function createLocalBackend(): Backend {
         body: body === undefined ? undefined : JSON.stringify(body),
       });
     } catch {
-      throw new Error('Could not reach the Workday server. Check that it is running and you are on the network.');
+      throw new Error('Could not reach the ActivTrack server. Check that it is running and you are on the network.');
     }
     let payload: unknown = null;
     try {
@@ -110,6 +110,18 @@ export function createLocalBackend(): Backend {
     async testLdap(settings, username, password) {
       const { result } = await call<{ result: LdapTestResult }>('admin/ldap-test', { settings, username, password });
       return result;
+    },
+
+    async apiHeaders() {
+      return { 'X-Workday': '1' };
+    },
+
+    watch(listener) {
+      // The install server has no push channel, so check for teammates' changes every 30 seconds while visible.
+      const timer = window.setInterval(() => {
+        if (document.visibilityState === 'visible') listener('tasks');
+      }, 30_000);
+      return () => window.clearInterval(timer);
     },
   };
 }

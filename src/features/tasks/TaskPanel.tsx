@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { History, ListChecks, MessageSquare, Trash2, X } from 'lucide-react';
+import { Copy, History, Link2, ListChecks, MessageSquare, Trash2, X } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { LoadingState } from '@/components/QueryStates';
 import { TaskDetailsTab } from '@/features/tasks/TaskDetailsTab';
@@ -7,7 +8,7 @@ import { CommentsTab } from '@/features/comments/CommentsTab';
 import { HistoryTab } from '@/features/tasks/HistoryTab';
 import { useQuery } from '@/hooks/useQuery';
 import { useToast } from '@/hooks/useToast';
-import { deleteTask, getTask } from '@/lib/db/tasks';
+import { deleteTask, duplicateTask, getTask } from '@/lib/db/tasks';
 import { canDeleteTask, canManage, canWrite } from '@/lib/db/access';
 import { useCurrentUser } from '@/features/auth/AuthProvider';
 import type { Member, ProjectAccess, Status } from '@/lib/db/types';
@@ -42,6 +43,27 @@ export function TaskPanel({ taskId, statuses, members, access, onClose }: TaskPa
   }, [onClose, confirmDelete]);
 
   const status = statuses.find((s) => s.id === task?.statusId);
+  const [, setSearchParams] = useSearchParams();
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success('Link copied');
+    } catch {
+      toast.error(new Error('Could not copy the link. Copy it from the address bar instead.'));
+    }
+  };
+
+  const duplicate = async () => {
+    if (!task) return;
+    try {
+      const copy = await duplicateTask(task.id);
+      toast.success('Card duplicated');
+      setSearchParams((p) => { p.set('task', copy.id); return p; });
+    } catch (error) {
+      toast.error(error);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Task details">
@@ -55,9 +77,19 @@ export function TaskPanel({ taskId, statuses, members, access, onClose }: TaskPa
             </span>
           )}
           {!editable && (
-            <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300">View only</span>
+            <span className="rounded-full bg-info-50 px-2.5 py-1 text-xs font-medium text-info-700 dark:bg-info-950 dark:text-info-300">View only</span>
           )}
           <div className="flex-1" />
+          {task && (
+            <button className="icon-btn" onClick={copyLink} aria-label="Copy link to this card" title="Copy link">
+              <Link2 className="h-4 w-4" />
+            </button>
+          )}
+          {task && editable && (
+            <button className="icon-btn" onClick={duplicate} aria-label="Duplicate card" title="Duplicate">
+              <Copy className="h-4 w-4" />
+            </button>
+          )}
           {task && canDeleteTask(access, task, me) && (
             <button className="icon-btn hover:text-red-600 dark:hover:text-red-400" onClick={() => setConfirmDelete(true)} aria-label="Delete task" title="Delete task">
               <Trash2 className="h-4 w-4" />

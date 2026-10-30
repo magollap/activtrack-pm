@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { createTask } from '@/lib/db/tasks';
 import { useToast } from '@/hooks/useToast';
+import { onCommand } from '@/lib/commands';
 
 interface QuickAddProps {
   projectId: string;
@@ -10,12 +11,19 @@ interface QuickAddProps {
   dueDate?: string;
   autoFocus?: boolean;
   compact?: boolean;
+  /** Focus this box when the "N" shortcut is pressed. */
+  listenForShortcut?: boolean;
   onCancel?: () => void;
 }
 
-export function QuickAdd({ projectId, statusId, placeholder = 'Add a task, press Enter', dueDate, autoFocus, compact, onCancel }: QuickAddProps) {
+export function QuickAdd({ projectId, statusId, placeholder = 'Add a task, press Enter', dueDate, autoFocus, compact, listenForShortcut, onCancel }: QuickAddProps) {
   const toast = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!listenForShortcut) return;
+    return onCommand('quick-add', () => inputRef.current?.focus());
+  }, [listenForShortcut]);
   const [title, setTitle] = useState('');
   const [busy, setBusy] = useState(false);
 

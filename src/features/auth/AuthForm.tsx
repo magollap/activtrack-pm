@@ -74,7 +74,7 @@ export function AuthForm({ notice }: { notice: string | null }) {
 
       {showMethodTabs && (
         <div className="mt-6 grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800" role="tablist">
-          <MethodTab active={method === 'local'} onClick={() => setMethod('local')} icon={KeyRound} label="Workday account" />
+          <MethodTab active={method === 'local'} onClick={() => setMethod('local')} icon={KeyRound} label="ActivTrack account" />
           <MethodTab active={method === 'ldap'} onClick={() => setMethod('ldap')} icon={Building2} label="Company directory" />
         </div>
       )}
@@ -139,7 +139,7 @@ export function AuthForm({ notice }: { notice: string | null }) {
           <p>
             Administrator?{' '}
             <button type="button" className="font-medium text-brand-700 hover:underline dark:text-brand-300" onClick={() => setMethod('local')}>
-              Sign in with a Workday password
+              Sign in with a ActivTrack password
             </button>
           </p>
         )}
@@ -152,7 +152,7 @@ export function AuthForm({ notice }: { notice: string | null }) {
         )}
         {mode === 'signIn' && options.signUp && (
           <p>
-            New to Workday?{' '}
+            New to ActivTrack?{' '}
             <button type="button" className="font-medium text-brand-700 hover:underline dark:text-brand-300" onClick={() => switchMode('signUp')}>
               Create an account
             </button>

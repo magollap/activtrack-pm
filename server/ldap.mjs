@@ -32,7 +32,7 @@ function unreachable(error) {
   console.error('LDAP error:', error.message);
   return new HttpError(
     503,
-    'The directory (LDAP) server could not be reached. Governors can still sign in with a Workday password.',
+    'The directory (LDAP) server could not be reached. Governors can still sign in with a ActivTrack password.',
   );
 }
 

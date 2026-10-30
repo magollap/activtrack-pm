@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Archive, ChevronRight, Home, Lock, Plus, Settings, X } from 'lucide-react';
+import { Archive, ChevronRight, Home, Keyboard, ListTodo, Lock, Plus, Settings, Sparkles, X } from 'lucide-react';
 import { Logo } from '@/components/Logo';
+import { MOD_KEY, openAssistant, openShortcuts } from '@/lib/commands';
 import { ProjectFormModal } from '@/features/projects/ProjectFormModal';
 import { useCurrentUser } from '@/features/auth/AuthProvider';
 import { useQuery } from '@/hooks/useQuery';
@@ -15,11 +16,13 @@ interface SidebarProps {
 }
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+  `relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
     isActive
-      ? 'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300'
-      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
+      ? 'bg-sidebar-active text-sidebar-accent before:absolute before:inset-y-1.5 before:left-0 before:w-[3px] before:rounded-full before:bg-sidebar-accent'
+      : 'text-sidebar-fg/80 hover:bg-sidebar-hover hover:text-sidebar-fg'
   }`;
+
+const sectionLabel = 'text-[11px] font-semibold uppercase tracking-[0.12em] text-sidebar-muted';
 
 function ProjectLink({ project, onNavigate }: { project: Project; onNavigate: () => void }) {
   return (
@@ -45,28 +48,37 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
     <>
       {mobileOpen && <div className="fixed inset-0 z-40 animate-fade-in bg-slate-900/40 md:hidden" onClick={onClose} />}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900 md:static md:z-auto md:w-64 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-fg md:static md:z-auto md:w-64 md:translate-x-0 ${
           mobileOpen ? 'animate-slide-right' : 'hidden md:flex'
         }`}
       >
         <div className="flex h-16 items-center justify-between px-5">
           <NavLink to="/" className="flex items-center gap-2.5" onClick={onClose}>
             <Logo className="h-8 w-8" />
-            <span className="text-lg font-semibold tracking-tight">Workday</span>
+            <span className="text-lg font-semibold tracking-tight">Activ<span className="text-sidebar-accent">Track</span></span>
           </NavLink>
-          <button className="icon-btn md:hidden" onClick={onClose} aria-label="Close menu">
+          <button className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-fg md:hidden" onClick={onClose} aria-label="Close menu">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 pb-4">
-          <NavLink to="/" end className={linkClass} onClick={onClose}>
-            <Home className="h-4 w-4" /> Home
-          </NavLink>
+          <div className="space-y-0.5">
+            <NavLink to="/" end className={linkClass} onClick={onClose}>
+              <Home className="h-4 w-4" /> Home
+            </NavLink>
+            <NavLink to="/my-tasks" className={linkClass} onClick={onClose}>
+              <ListTodo className="h-4 w-4" /> My tasks
+            </NavLink>
+            <button type="button" className={`${linkClass({ isActive: false })} w-full`} onClick={() => { onClose(); openAssistant(); }}>
+              <Sparkles className="h-4 w-4 text-sidebar-accent" /> AI assistant
+              <kbd className="ml-auto rounded border border-sidebar-border px-1.5 text-[10px] font-medium text-sidebar-muted">{MOD_KEY} K</kbd>
+            </button>
+          </div>
 
           {personal.length > 0 && (
             <>
-              <p className="mb-1 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-slate-400">My space</p>
+              <p className={`mb-1 mt-6 px-3 ${sectionLabel}`}>My space</p>
               <div className="space-y-0.5">
                 {personal.map((p) => <ProjectLink key={p.id} project={p} onNavigate={onClose} />)}
               </div>
@@ -74,9 +86,9 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           )}
 
           <div className="mb-1 mt-6 flex h-7 items-center justify-between px-3">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Shared projects</span>
+            <span className={sectionLabel}>Shared projects</span>
             {canCreate && (
-              <button className="icon-btn h-7 w-7" onClick={() => setCreating(true)} aria-label="New project" title="New project">
+              <button className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-sidebar-muted hover:bg-sidebar-hover hover:text-sidebar-fg" onClick={() => setCreating(true)} aria-label="New project" title="New project">
                 <Plus className="h-4 w-4" />
               </button>
             )}
@@ -87,13 +99,13 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           {canCreate ? (
             <button
               onClick={() => setCreating(true)}
-              className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+              className="mt-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-muted transition-colors hover:bg-sidebar-hover hover:text-sidebar-fg"
             >
               <Plus className="h-4 w-4" /> New project
             </button>
           ) : (
             active.length === 0 && (
-              <p className="px-3 py-2 text-xs leading-relaxed text-slate-400">
+              <p className="px-3 py-2 text-xs leading-relaxed text-sidebar-muted">
                 Projects show up here once a governor gives you access.
               </p>
             )
@@ -103,7 +115,7 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
             <div className="mt-4">
               <button
                 onClick={() => setShowArchived((s) => !s)}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-medium text-sidebar-muted hover:text-sidebar-fg"
               >
                 <ChevronRight className={`h-3.5 w-3.5 transition-transform ${showArchived ? 'rotate-90' : ''}`} />
                 <Archive className="h-3.5 w-3.5" /> Archived ({archived.length})
@@ -117,7 +129,11 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
           )}
         </nav>
 
-        <div className="border-t border-slate-200 p-3 dark:border-slate-800">
+        <div className="space-y-0.5 border-t border-sidebar-border p-3">
+          <button type="button" className={`${linkClass({ isActive: false })} hidden w-full md:flex`} onClick={openShortcuts}>
+            <Keyboard className="h-4 w-4" /> Shortcuts
+            <kbd className="ml-auto rounded border border-sidebar-border px-1.5 text-[10px] font-medium text-sidebar-muted">?</kbd>
+          </button>
           <NavLink to="/settings" className={linkClass} onClick={onClose}>
             <Settings className="h-4 w-4" /> Settings
           </NavLink>

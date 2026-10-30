@@ -60,7 +60,7 @@ export function ProjectHeader({ project, statuses, taskCount, access, isGovernor
               </span>
             )}
             {access && access !== 'manage' && (
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-950 dark:text-sky-300" title={ACCESS_META[access].description}>
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-info-50 px-2 py-0.5 text-xs font-medium text-info-700 dark:bg-info-950 dark:text-info-300" title={ACCESS_META[access].description}>
                 {access === 'read' && <Eye className="h-3 w-3" />} {ACCESS_META[access].label}
               </span>
             )}

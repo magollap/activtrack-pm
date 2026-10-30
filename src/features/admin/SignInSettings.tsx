@@ -116,10 +116,10 @@ export function SignInSettings() {
       <section className="card">
         <header className="border-b border-slate-100 px-5 py-4 dark:border-slate-800">
           <h3 className="font-semibold">Sign-in methods</h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Choose how people get into Workday. Admins can always use their Workday password, even when it is turned off for everyone else.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Choose how people get into ActivTrack. Admins can always use their ActivTrack password, even when it is turned off for everyone else.</p>
         </header>
-        <MethodRow icon={KeyRound} title="Workday passwords" description="People sign in with an email and a password stored on this server." checked={draft.localEnabled} onChange={(v) => set({ localEnabled: v })} />
-        <MethodRow icon={UserPlus} title="Open sign-up" description="Anyone who can reach this server can create a Workday account. New accounts only see their own private space." checked={draft.signUpEnabled} onChange={(v) => set({ signUpEnabled: v })} />
+        <MethodRow icon={KeyRound} title="ActivTrack passwords" description="People sign in with an email and a password stored on this server." checked={draft.localEnabled} onChange={(v) => set({ localEnabled: v })} />
+        <MethodRow icon={UserPlus} title="Open sign-up" description="Anyone who can reach this server can create a ActivTrack account. New accounts only see their own private space." checked={draft.signUpEnabled} onChange={(v) => set({ signUpEnabled: v })} />
         <MethodRow icon={Network} title="Company directory (LDAP)" description="People sign in with their directory username and password. Their account is created on first sign-in." checked={draft.ldapEnabled} onChange={(v) => set({ ldapEnabled: v })} />
       </section>
 
@@ -175,7 +175,7 @@ export function SignInSettings() {
               spellCheck={false}
             />
             <p className="mt-1 text-xs text-slate-500">
-              One group per line, by name or full path. Governor groups win over delegate groups, and everyone else becomes a Reporter; this is checked at every sign-in. Leave empty to manage roles in Workday instead.
+              One group per line, by name or full path. Governor groups win over delegate groups, and everyone else becomes a Reporter; this is checked at every sign-in. Leave empty to manage roles in ActivTrack instead.
             </p>
           </div>
         </div>

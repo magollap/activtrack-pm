@@ -45,7 +45,7 @@ export function ProfileSettings() {
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 font-medium dark:bg-slate-800">
             {me.authSource === 'ldap' ? <Network className="h-3.5 w-3.5" /> : <KeyRound className="h-3.5 w-3.5" />}
-            {me.authSource === 'ldap' ? 'Signs in with the company directory' : 'Signs in with a Workday password'}
+            {me.authSource === 'ldap' ? 'Signs in with the company directory' : 'Signs in with a ActivTrack password'}
           </span>
         </div>
         <div>

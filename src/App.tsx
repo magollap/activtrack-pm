@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
 import { UpdateBanner } from '@/components/layout/UpdateBanner';
 import { AppRoutes } from '@/AppRoutes';
 import { AuthPage } from '@/features/auth/AuthPage';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { AssistantDialog } from '@/features/ai/AssistantDialog';
+import { Shortcuts } from '@/features/shortcuts/Shortcuts';
 import { Logo } from '@/components/Logo';
+import { backend } from '@/lib/backend';
+import { emitChange } from '@/lib/db/events';
 
 export default function App() {
   const { state, retry } = useAuth();
@@ -36,8 +40,14 @@ export default function App() {
   return <Workspace />;
 }
 
+/** Keeps every open screen in step with changes teammates make (Supabase Realtime, or polling on installs). */
+function useLiveSync() {
+  useEffect(() => backend().watch(emitChange), []);
+}
+
 function Workspace() {
   const [menuOpen, setMenuOpen] = useState(false);
+  useLiveSync();
 
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden">
@@ -51,6 +61,8 @@ function Workspace() {
           </main>
         </div>
       </div>
+      <AssistantDialog />
+      <Shortcuts />
     </div>
   );
 }

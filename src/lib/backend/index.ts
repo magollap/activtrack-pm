@@ -23,12 +23,12 @@ export async function selectBackend(): Promise<Backend> {
   }
   const url = import.meta.env.VITE_SUPABASE_URL;
   const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error('Workday could not find its server or its online database.');
+  if (!url || !key) throw new Error('ActivTrack could not find its server or its online database.');
   active = createSupabaseBackend(url, key);
   return active;
 }
 
 export function backend(): Backend {
-  if (!active) throw new Error('Workday is still starting up.');
+  if (!active) throw new Error('ActivTrack is still starting up.');
   return active;
 }

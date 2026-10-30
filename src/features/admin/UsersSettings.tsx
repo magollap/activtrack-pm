@@ -64,7 +64,7 @@ export function UsersSettings() {
                 <p className="flex items-center gap-1.5 truncate text-xs text-slate-500 dark:text-slate-400">
                   {user.authSource === 'ldap' ? <Network className="h-3 w-3 shrink-0" /> : <KeyRound className="h-3 w-3 shrink-0" />}
                   <span className="truncate">{user.email}</span>
-                  <span className="hidden sm:inline">· {user.authSource === 'ldap' ? 'Company directory' : 'Workday password'}</span>
+                  <span className="hidden sm:inline">· {user.authSource === 'ldap' ? 'Company directory' : 'ActivTrack password'}</span>
                 </p>
               </div>
               <div className="flex w-full items-center gap-1 sm:w-auto">

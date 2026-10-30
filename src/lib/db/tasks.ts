@@ -108,6 +108,24 @@ export async function moveTask(id: string, statusId: string, orderedIds: string[
   );
 }
 
+/** Copies a card (and its checklist, unticked) into the same column, right after the original's column order. */
+export async function duplicateTask(id: string): Promise<Task> {
+  const task = await getTask(id);
+  if (!task) throw new Error('This task no longer exists.');
+  const copy = await createTask(task.projectId, {
+    title: `${task.title.slice(0, 193)} (copy)`,
+    statusId: task.statusId,
+    description: task.description,
+    priority: task.priority,
+    assigneeId: task.assigneeId,
+    startDate: task.startDate,
+    dueDate: task.dueDate,
+  });
+  const items = (await table('checklistItems').list({ taskId: id })).sort((a, b) => a.order - b.order);
+  await table('checklistItems').insertMany(items.map((item) => ({ taskId: copy.id, text: item.text, done: false, order: item.order })));
+  return copy;
+}
+
 /** Checklist items, comments and history go with the task. */
 export async function deleteTask(id: string): Promise<void> {
   const removed = await table('tasks').remove({ id });

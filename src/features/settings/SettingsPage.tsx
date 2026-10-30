@@ -12,7 +12,7 @@ const TABS = [
   { id: 'users', label: 'Users', icon: Users, admin: true, localOnly: false },
   { id: 'sign-in', label: 'Sign-in', icon: KeyRound, admin: true, localOnly: true },
   { id: 'data', label: 'Data', icon: Database, admin: false, localOnly: false },
-  { id: 'app', label: 'App', icon: Smartphone, admin: false, localOnly: false },
+  { id: 'app', label: 'App & theme', icon: Smartphone, admin: false, localOnly: false },
 ] as const;
 
 type TabId = (typeof TABS)[number]['id'];
