@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { AlertCircle, Building2, Eye, EyeOff, KeyRound, Loader2 } from 'lucide-react';
+import { AlertCircle, Building2, Eye, EyeOff, KeyRound, Loader2, MailCheck } from 'lucide-react';
 import { backend } from '@/lib/backend';
 import type { AuthOptions, SignInMethod } from '@/lib/backend/types';
 import { errorMessage } from '@/lib/errors';
@@ -17,6 +17,7 @@ export function AuthForm({ notice }: { notice: string | null }) {
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(notice);
+  const [info, setInfo] = useState<string | null>(null);
 
   useEffect(() => {
     backend()
@@ -32,16 +33,24 @@ export function AuthForm({ notice }: { notice: string | null }) {
     setMode(next);
     setMethod('local');
     setError(null);
+    setInfo(null);
   };
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setBusy(true);
     setError(null);
+    setInfo(null);
     try {
       if (mode === 'signUp') {
         if (password.length < 8) throw new Error('Passwords must be at least 8 characters.');
-        await backend().signUp(name, identifier, password);
+        const { confirmEmail } = await backend().signUp(name, identifier, password);
+        if (confirmEmail) {
+          setMode('signIn');
+          setPassword('');
+          setInfo(`Account created. We sent a confirmation link to ${identifier.trim()}. Open it, then sign in here.`);
+          setBusy(false);
+        }
       } else {
         await backend().signIn(method, identifier, password);
       }
@@ -126,6 +135,7 @@ export function AuthForm({ notice }: { notice: string | null }) {
           {mode === 'signUp' && <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">At least 8 characters.</p>}
         </div>
 
+        {info && <Notice message={info} />}
         {error && <Alert message={error} />}
 
         <button type="submit" className="btn-primary w-full py-2.5" disabled={busy || !identifier || !password || (mode === 'signUp' && !name.trim())}>
@@ -139,7 +149,7 @@ export function AuthForm({ notice }: { notice: string | null }) {
           <p>
             Administrator?{' '}
             <button type="button" className="font-medium text-brand-700 hover:underline dark:text-brand-300" onClick={() => setMethod('local')}>
-              Sign in with a ActivTrack password
+              Sign in with an ActivTrack password
             </button>
           </p>
         )}
@@ -193,6 +203,15 @@ function Alert({ message }: { message: string }) {
   return (
     <div className="flex animate-fade-in items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300" role="alert">
       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+      <p>{message}</p>
+    </div>
+  );
+}
+
+function Notice({ message }: { message: string }) {
+  return (
+    <div className="flex animate-fade-in items-start gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2.5 text-sm text-brand-800 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-200" role="status">
+      <MailCheck className="mt-0.5 h-4 w-4 shrink-0" />
       <p>{message}</p>
     </div>
   );

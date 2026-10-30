@@ -76,6 +76,7 @@ export function createLocalBackend(): Backend {
     async signUp(name, email, password) {
       await call('auth/signup', { name: name.trim(), email: email.trim(), password });
       notify();
+      return { confirmEmail: false };
     },
 
     async signOut() {

@@ -159,7 +159,7 @@ Open **Settings → Sign-in** as an admin. You can turn each of these on or off:
 - **Open sign-up**: anyone who can reach the server can create a basic account.
 - **Company directory (LDAP)**: sign in with a directory username and password. The account is created automatically the first time someone signs in.
 
-**Fallback when LDAP is down:** admins can always sign in with a ActivTrack password, even when ActivTrack passwords are turned off for everyone else. The sign-in page shows a "Sign in with a ActivTrack password" link for this. If no account exists yet, sign-up is always available so the first admin can be created.
+**Fallback when LDAP is down:** admins can always sign in with an ActivTrack password, even when ActivTrack passwords are turned off for everyone else. The sign-in page shows a "Sign in with an ActivTrack password" link for this. If no account exists yet, sign-up is always available so the first admin can be created.
 
 | LDAP field | Example | Notes |
 | --- | --- | --- |

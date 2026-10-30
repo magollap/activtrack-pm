@@ -59,7 +59,9 @@ const AUTH_ERRORS: [RegExp, string][] = [
   [/invalid login credentials/i, 'That email and password do not match an account.'],
   [/already registered|already exists/i, 'An account with this email already exists. Try signing in instead.'],
   [/password should be at least/i, 'Passwords must be at least 8 characters.'],
-  [/rate limit/i, 'Too many attempts. Please wait a moment and try again.'],
+  [/email not confirmed/i, 'Please confirm your email first: open the link we sent to your inbox, then sign in.'],
+  [/email rate limit/i, 'Too many emails were sent in the last hour. Check your inbox for an earlier confirmation link, or try again later.'],
+  [/rate limit|too many requests/i, 'Too many attempts. Please wait a few minutes and try again.'],
   [/fetch/i, 'Could not reach the server. Check your internet connection.'],
 ];
 
@@ -125,13 +127,16 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        options: { data: { name: name.trim() } },
+        // Send the confirmation link back to whichever address the person signed up on.
+        options: { data: { name: name.trim() }, emailRedirectTo: window.location.origin },
       });
       if (error) throw authError(error.message);
       // Supabase hides duplicate emails by returning a user without identities.
       if (data.user && data.user.identities?.length === 0) {
         throw authError('already registered');
       }
+      // No session means "Confirm email" is on in Supabase: the person must click the emailed link first.
+      return { confirmEmail: !data.session };
     },
 
     async signOut() {
