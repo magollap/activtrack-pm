@@ -1,12 +1,13 @@
 import { ChevronRight } from 'lucide-react';
 import { ListRow } from '@/features/list/ListRow';
-import type { Member, Status, Task } from '@/lib/db/types';
+import type { CustomField, Member, Status, Task } from '@/lib/db/types';
 
 interface ListGroupProps {
   status: Status;
   tasks: Task[];
   statuses: Status[];
   members: Member[];
+  fields: CustomField[];
   editable: boolean;
   collapsed: boolean;
   selected: Set<string>;
@@ -15,7 +16,7 @@ interface ListGroupProps {
   onOpenTask: (taskId: string) => void;
 }
 
-export function ListGroup({ status, tasks, statuses, members, editable, collapsed, selected, onSelect, onToggle, onOpenTask }: ListGroupProps) {
+export function ListGroup({ status, tasks, statuses, members, fields, editable, collapsed, selected, onSelect, onToggle, onOpenTask }: ListGroupProps) {
   const ids = tasks.map((t) => t.id);
   const chosen = ids.filter((id) => selected.has(id)).length;
   return (
@@ -52,6 +53,7 @@ export function ListGroup({ status, tasks, statuses, members, editable, collapse
               task={task}
               statuses={statuses}
               members={members}
+              fields={fields}
               isDone={status.isDone}
               editable={editable}
               selected={selected.has(task.id)}

@@ -21,7 +21,7 @@ import type { TaskViewProps } from '@/features/projects/taskViewProps';
 
 type Columns = Record<string, string[]>;
 
-export function BoardView({ projectId, statuses, tasks, members, checklist, editable, onOpenTask }: TaskViewProps) {
+export function BoardView({ projectId, statuses, tasks, members, checklist, fields, editable, onOpenTask }: TaskViewProps) {
   const toast = useToast();
   const buildColumns = (): Columns =>
     Object.fromEntries(statuses.map((s) => [s.id, tasks.filter((t) => t.statusId === s.id).map((t) => t.id)]));
@@ -110,6 +110,7 @@ export function BoardView({ projectId, statuses, tasks, members, checklist, edit
             tasks={taskMap}
             members={memberMap}
             checklist={checklist}
+            fields={fields}
             editable={editable}
             onOpenTask={onOpenTask}
           />
@@ -122,6 +123,7 @@ export function BoardView({ projectId, statuses, tasks, members, checklist, edit
             assignee={activeTask.assigneeId ? memberMap.get(activeTask.assigneeId) : undefined}
             checklist={checklist.get(activeTask.id)}
             isDone={activeStatus?.isDone ?? false}
+            fields={fields}
             overlay
           />
         )}

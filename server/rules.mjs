@@ -18,6 +18,14 @@ const day = (v) => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
 const iso = (v) => typeof v === 'string' && v.length <= 40 && !Number.isNaN(Date.parse(v));
 const oneOf = (...values) => (v) => values.includes(v);
 const nullable = (check) => (v) => v === null || check(v);
+const plainObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
+const sized = (max) => (v) => JSON.stringify(v).length <= max;
+const fieldValues = (v) =>
+  plainObject(v) && sized(20000)(v) && Object.values(v).every((x) => x === null || ['string', 'number', 'boolean'].includes(typeof x));
+const fieldOptions = (v) =>
+  Array.isArray(v) && sized(10000)(v) && v.every((o) => plainObject(o) && id(o.id) && str(60, 1)(o.label) && color(o.color));
+const templateData = (v) => plainObject(v) && sized(200000)(v);
+const FIELD_TYPES = ['text', 'number', 'date', 'select', 'checkbox', 'url'];
 
 export const ROLES = ['governor', 'delegate', 'reporter'];
 const WRITERS = ['write', 'write_delete', 'lead', 'manage'];
@@ -132,15 +140,16 @@ export function createContext(store, me) {
         dueDate: nullable(day),
         order: int,
         completedAt: nullable(iso),
+        customValues: fieldValues,
       },
       select: (row) => access(row.projectId) !== null,
       insert: {
-        columns: ['projectId', 'title', 'description', 'statusId', 'priority', 'assigneeId', 'startDate', 'dueDate', 'order', 'completedAt'],
-        defaults: () => ({ description: '', priority: 'medium', assigneeId: null, startDate: null, dueDate: null, order: 0, completedAt: null, createdBy: me.id }),
+        columns: ['projectId', 'title', 'description', 'statusId', 'priority', 'assigneeId', 'startDate', 'dueDate', 'order', 'completedAt', 'customValues'],
+        defaults: () => ({ description: '', priority: 'medium', assigneeId: null, startDate: null, dueDate: null, order: 0, completedAt: null, customValues: {}, createdBy: me.id }),
         allow: (row) => WRITERS.includes(access(row.projectId)) && statusInProject(row) && profileExists(row.assigneeId),
       },
       update: {
-        columns: ['title', 'description', 'statusId', 'priority', 'assigneeId', 'startDate', 'dueDate', 'order', 'completedAt'],
+        columns: ['title', 'description', 'statusId', 'priority', 'assigneeId', 'startDate', 'dueDate', 'order', 'completedAt', 'customValues'],
         allow: (row, next) =>
           WRITERS.includes(access(row.projectId)) && statusInProject(next) && profileExists(next.assigneeId),
       },
@@ -175,6 +184,28 @@ export function createContext(store, me) {
     taskHistory: {
       fields: {},
       select: (row) => taskAccess(row.taskId) !== null,
+    },
+    customFields: {
+      fields: { projectId: id, name: str(40, 1), type: oneOf(...FIELD_TYPES), options: fieldOptions, order: int, showOnCard: bool },
+      select: (row) => access(row.projectId) !== null,
+      insert: {
+        columns: ['projectId', 'name', 'type', 'options', 'order', 'showOnCard'],
+        defaults: () => ({ options: [], order: 0, showOnCard: true }),
+        allow: (row) => MANAGERS.includes(access(row.projectId)),
+      },
+      update: { columns: ['name', 'options', 'order', 'showOnCard'], allow: (row) => MANAGERS.includes(access(row.projectId)) },
+      remove: (row) => MANAGERS.includes(access(row.projectId)),
+    },
+    projectTemplates: {
+      fields: { name: str(80, 1), description: str(2000), color, data: templateData },
+      select: () => !me.disabled,
+      insert: {
+        columns: ['name', 'description', 'color', 'data'],
+        defaults: () => ({ description: '', color: '#0a8c4e', data: {}, createdBy: me.id }),
+        allow: () => canCreateProjects,
+      },
+      update: { columns: ['name', 'description', 'color', 'data'], allow: (row) => row.createdBy === me.id || isGovernor },
+      remove: (row) => row.createdBy === me.id || isGovernor,
     },
   };
 
@@ -301,6 +332,7 @@ function cascade(db, collection, removed) {
   if (collection === 'projects') {
     drop('statuses', 'projectId');
     drop('projectMembers', 'projectId');
+    drop('customFields', 'projectId');
     cascade(db, 'tasks', drop('tasks', 'projectId'));
   }
   if (collection === 'tasks') {

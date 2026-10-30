@@ -31,6 +31,11 @@ In the Supabase dashboard, open **SQL Editor → New query**. Paste the contents
 
 This lets open browser tabs refresh by themselves when a teammate changes a card. It changes no tables or permissions, and it is safe to run twice.
 
+### 1b-2. Existing Supabase project: add custom fields and templates
+
+In **SQL Editor → New query**, paste the contents of
+`supabase/migrations/20261030160000_custom_fields_templates.sql` and click **Run**. Until you do, the app still works, but adding custom fields or saving templates asks you to run this file. (`setup.sql` already includes it.)
+
 ### 1c. New or empty Supabase project: create the tables
 
 Do this if the tables are missing, or if the app says **"Could not find the table 'public.profiles' in the schema cache"**.

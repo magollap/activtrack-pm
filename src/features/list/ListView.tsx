@@ -13,7 +13,7 @@ const COLUMNS: { key: SortKey; label: string }[] = [
   { key: 'dueDate', label: 'Due' },
 ];
 
-export function ListView({ statuses, tasks, members, editable, onOpenTask }: TaskViewProps) {
+export function ListView({ statuses, tasks, members, fields, editable, onOpenTask }: TaskViewProps) {
   const [sort, setSort] = useState<SortState>({ key: 'manual', dir: 'asc' });
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -91,6 +91,7 @@ export function ListView({ statuses, tasks, members, editable, onOpenTask }: Tas
           tasks={sorted.filter((t) => t.statusId === status.id)}
           statuses={statuses}
           members={members}
+          fields={fields}
           editable={editable}
           collapsed={collapsed.has(status.id)}
           selected={selected}

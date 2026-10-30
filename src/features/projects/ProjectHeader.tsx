@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Archive, ArchiveRestore, Eye, Lock, MoreHorizontal, Pencil, Trash2, UserPlus, Workflow } from 'lucide-react';
+import { Archive, ArchiveRestore, Eye, LayoutTemplate, Lock, MoreHorizontal, Pencil, SlidersHorizontal, Trash2, UserPlus, Workflow } from 'lucide-react';
+import { FieldsModal } from '@/features/fields/FieldsModal';
+import { SaveTemplateModal } from '@/features/templates/SaveTemplateModal';
+import { useCurrentUser } from '@/features/auth/AuthProvider';
 import { Popover } from '@/components/Popover';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ProjectFormModal } from '@/features/projects/ProjectFormModal';
@@ -8,22 +11,24 @@ import { WorkflowModal } from '@/features/workflow/WorkflowModal';
 import { ProjectAccessModal } from '@/features/admin/ProjectAccessModal';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/db/projects';
 import { useToast } from '@/hooks/useToast';
-import { ACCESS_META, canManage } from '@/lib/db/access';
-import type { Project, ProjectAccess, Status } from '@/lib/db/types';
+import { ACCESS_META, canCreateProjects, canManage } from '@/lib/db/access';
+import type { CustomField, Project, ProjectAccess, Status } from '@/lib/db/types';
 
 interface ProjectHeaderProps {
   project: Project;
   statuses: Status[];
+  fields: CustomField[];
   taskCount: number;
   access: ProjectAccess | null;
   isGovernor: boolean;
 }
 
-type Dialog = 'edit' | 'workflow' | 'archive' | 'delete' | 'share' | null;
+type Dialog = 'edit' | 'workflow' | 'fields' | 'template' | 'archive' | 'delete' | 'share' | null;
 
 const menuItem = 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700';
 
-export function ProjectHeader({ project, statuses, taskCount, access, isGovernor }: ProjectHeaderProps) {
+export function ProjectHeader({ project, statuses, fields, taskCount, access, isGovernor }: ProjectHeaderProps) {
+  const me = useCurrentUser();
   const toast = useToast();
   const navigate = useNavigate();
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -78,6 +83,9 @@ export function ProjectHeader({ project, statuses, taskCount, access, isGovernor
           <button className="btn-secondary hidden sm:inline-flex" onClick={() => setDialog('workflow')}>
             <Workflow className="h-4 w-4" /> Workflow
           </button>
+          <button className="btn-secondary hidden lg:inline-flex" onClick={() => setDialog('fields')}>
+            <SlidersHorizontal className="h-4 w-4" /> Fields
+          </button>
           <Popover
             align="right"
             trigger={({ toggle }) => (
@@ -88,6 +96,10 @@ export function ProjectHeader({ project, statuses, taskCount, access, isGovernor
               <>
                 <button className={menuItem} onClick={() => { closeMenu(); setDialog('edit'); }}><Pencil className="h-4 w-4" /> Edit details</button>
                 <button className={menuItem} onClick={() => { closeMenu(); setDialog('workflow'); }}><Workflow className="h-4 w-4" /> Manage workflow</button>
+                <button className={menuItem} onClick={() => { closeMenu(); setDialog('fields'); }}><SlidersHorizontal className="h-4 w-4" /> Custom fields</button>
+                {canCreateProjects(me) && (
+                  <button className={menuItem} onClick={() => { closeMenu(); setDialog('template'); }}><LayoutTemplate className="h-4 w-4" /> Save as template</button>
+                )}
                 {shareable && (
                   <button className={menuItem} onClick={() => { closeMenu(); setDialog('share'); }}><UserPlus className="h-4 w-4" /> Manage people</button>
                 )}
@@ -110,6 +122,8 @@ export function ProjectHeader({ project, statuses, taskCount, access, isGovernor
 
       {dialog === 'edit' && <ProjectFormModal project={project} onClose={close} />}
       {dialog === 'share' && <ProjectAccessModal project={project} onClose={close} />}
+      {dialog === 'fields' && <FieldsModal projectId={project.id} fields={fields} onClose={close} />}
+      {dialog === 'template' && <SaveTemplateModal project={project} taskCount={taskCount} onClose={close} />}
       {dialog === 'workflow' && <WorkflowModal projectId={project.id} statuses={statuses} onClose={close} />}
       {dialog === 'archive' && (
         <ConfirmDialog

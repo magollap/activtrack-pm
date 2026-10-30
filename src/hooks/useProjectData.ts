@@ -4,9 +4,10 @@ import { listTasks } from '@/lib/db/tasks';
 import { listMembers } from '@/lib/db/members';
 import { listChecklistItems } from '@/lib/db/checklist';
 import { listProjectMembers } from '@/lib/db/projectMembers';
+import { listFields } from '@/lib/db/fields';
 import { projectAccess } from '@/lib/db/access';
 import { useQuery } from '@/hooks/useQuery';
-import type { Member, Project, ProjectAccess, Status, Task } from '@/lib/db/types';
+import type { CustomField, Member, Project, ProjectAccess, Status, Task } from '@/lib/db/types';
 
 export interface ChecklistCount {
   done: number;
@@ -21,16 +22,19 @@ export interface ProjectData {
   members: Member[];
   checklist: Map<string, ChecklistCount>;
   access: ProjectAccess | null;
+  /** The project's custom fields, in display order. */
+  fields: CustomField[];
 }
 
 export async function loadProjectData(projectId: string, me: Member): Promise<ProjectData | null> {
   const project = await getProject(projectId);
   if (!project) return null;
-  const [statuses, tasks, profiles, memberships] = await Promise.all([
+  const [statuses, tasks, profiles, memberships, fields] = await Promise.all([
     listStatuses(projectId),
     listTasks(projectId),
     listMembers(),
     listProjectMembers(projectId),
+    listFields(projectId),
   ]);
   const items = tasks.length ? await listChecklistItems(tasks.map((t) => t.id)) : [];
   const checklist = new Map<string, ChecklistCount>();
@@ -44,7 +48,7 @@ export async function loadProjectData(projectId: string, me: Member): Promise<Pr
   const members = profiles.filter((p) =>
     project.isPersonal ? p.id === project.ownerId : !p.disabled && (p.role === 'governor' || p.id === project.createdBy || memberIds.has(p.id)),
   );
-  return { project, statuses, tasks, members, checklist, access: projectAccess(project, me, memberships) };
+  return { project, statuses, tasks, members, checklist, fields, access: projectAccess(project, me, memberships) };
 }
 
 export function useProjectData(projectId: string, me: Member) {
