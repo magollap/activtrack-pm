@@ -31,21 +31,20 @@ In the Supabase dashboard, open **SQL Editor → New query**. Paste the contents
 
 This lets open browser tabs refresh by themselves when a teammate changes a card. It changes no tables or permissions, and it is safe to run twice.
 
-### 1c. New, empty Supabase project only: create the tables
+### 1c. New or empty Supabase project: create the tables
 
-Skip this if your tables already exist.
+Do this if the tables are missing, or if the app says **"Could not find the table 'public.profiles' in the schema cache"**.
 
-1. In **SQL Editor**, run these three files from `supabase/migrations/`, one at a time, in this order:
-   1. `20261023161643_create_workday_schema.sql`
-   2. `20261023214556_governor_delegate_reporter_roles.sql`
-   3. `20261030120000_enable_realtime.sql`
-2. Deploy the edge function that lets governors create accounts from **Settings → Users**. Install the [Supabase CLI](https://supabase.com/docs/guides/cli), then run:
+1. In Supabase, open **SQL Editor → New query**.
+2. Paste the whole of `supabase/setup.sql` and click **Run**. It creates every table, security rule and trigger, turns on live updates, and sets up any account that signed up before the tables existed. The oldest account becomes the **governor** (super admin). It is safe to run again.
+3. Reload the app and sign in.
+4. Optional: so governors can create accounts from **Settings → Users**, deploy the `admin-create-user` edge function with the [Supabase CLI](https://supabase.com/docs/guides/cli):
    ```bash
    supabase login
    supabase link --project-ref YOUR-PROJECT-REF
    supabase functions deploy admin-create-user
    ```
-3. The first person to sign up becomes the **governor** (super admin).
+   Without it, people can still sign up themselves, and governors can change their roles.
 
 ### 1d. Copy the two connection values
 
@@ -123,6 +122,7 @@ Sign-up confirmation emails and password resets link back to your site, so Supab
 | The assistant says **Built-in commands** although you set a key | Redeploy after adding the key, and check that its name is spelled exactly as in the table above. |
 | "The AI key was rejected" | The key is wrong or was revoked. Create a new one. |
 | "The AI service is busy or the free quota is used up" | You hit the free tier's per-minute or daily limit. Wait, or use a paid key. |
+| "Could not find the table 'public.profiles' in the schema cache" | The tables are missing in this Supabase project. Run `supabase/setup.sql` (step 1c). |
 | Changes from teammates only show after switching tabs | Run `20261030120000_enable_realtime.sql` (step 1b). |
 | Confirmation email link opens `localhost` | Set the Site URL in step 4. |
 | A refreshed page such as `/projects/…` shows 404 | Make sure `vercel.json` is in the repository root. |
