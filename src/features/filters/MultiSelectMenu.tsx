@@ -32,7 +32,7 @@ export function MultiSelectMenu({ label, options, selected, onChange }: MultiSel
           }`}
         >
           {label}
-          {selected.length > 0 && <span className="rounded-full bg-brand-600 px-1.5 text-[10px] font-semibold text-white">{selected.length}</span>}
+          {selected.length > 0 && <span className="rounded-full bg-brand-600 px-1.5 text-[10px] font-semibold text-brand-contrast">{selected.length}</span>}
           <ChevronDown className="h-3.5 w-3.5" />
         </button>
       )}
@@ -49,7 +49,7 @@ export function MultiSelectMenu({ label, options, selected, onChange }: MultiSel
                 aria-checked={checked}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
               >
-                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? 'border-brand-600 bg-brand-600 text-white' : 'border-slate-300 dark:border-slate-600'}`}>
+                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? 'border-brand-600 bg-brand-600 text-brand-contrast' : 'border-slate-300 dark:border-slate-600'}`}>
                   {checked && <Check className="h-3 w-3" />}
                 </span>
                 {option.icon}

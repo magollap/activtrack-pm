@@ -11,6 +11,7 @@ import {
   verifyPassword,
 } from './auth.mjs';
 import { groupsMapped, ldapAuthenticate, roleFromGroups } from './ldap.mjs';
+import { AiError, aiConfig, checkAiRateLimit, planActions } from './ai.mjs';
 import { COLLECTIONS, defaultSettings } from './store.mjs';
 import {
   changeUser,
@@ -145,7 +146,7 @@ async function signInLocal(store, req, identifier, password) {
   }
   const profile = store.data.collections.profiles.find((p) => p.id === credential.userId);
   if (!profile) throw new HttpError(401, 'That email and password do not match an account.');
-  // Governors can always use their Workday password, so a directory outage never locks everyone out.
+  // Governors can always use their ActivTrack password, so a directory outage never locks everyone out.
   if (!store.data.settings.localEnabled && profile.role !== 'governor') {
     throw new HttpError(403, 'Password sign-in is turned off. Use your directory (LDAP) account.');
   }
@@ -292,6 +293,23 @@ async function handleData(store, req, res, me, collection, action) {
   throw new HttpError(404, 'Not found.');
 }
 
+async function handleAi(req, res, me) {
+  if (req.method === 'GET') {
+    const config = aiConfig();
+    return send(res, 200, { enabled: Boolean(config), provider: config?.label ?? null });
+  }
+  if (req.method !== 'POST') throw new HttpError(405, 'Method not allowed.');
+  try {
+    if (!aiConfig()) throw new AiError(501, 'AI is not configured on this server.');
+    checkAiRateLimit(me.id);
+    const body = await readJson(req);
+    return send(res, 200, await planActions(body));
+  } catch (error) {
+    if (error instanceof AiError) throw new HttpError(error.status, error.message);
+    throw error;
+  }
+}
+
 /** Routes everything under /api. Writes need a custom header, which cross-site forms cannot send. */
 export async function handleApi(store, req, res, path) {
   try {
@@ -304,6 +322,7 @@ export async function handleApi(store, req, res, path) {
     const me = sessionUser(store, req);
     if (!me) throw new HttpError(401, 'Your session has ended. Please sign in again.');
     if (area === 'admin') return await handleAdmin(store, req, res, me, rest.join('/'));
+    if (area === 'ai' && rest.length === 0) return await handleAi(req, res, me);
     if (area === 'data' && rest.length === 2) return await handleData(store, req, res, me, rest[0], rest[1]);
     throw new HttpError(404, 'Not found.');
   } catch (error) {

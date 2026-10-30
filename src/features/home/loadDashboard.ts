@@ -20,6 +20,14 @@ export interface DashboardData {
   completedThisWeek: number;
   attention: AttentionItem[];
   workload: { member: Member | null; open: number }[];
+  projects: ProjectSummary[];
+}
+
+export interface ProjectSummary {
+  project: Project;
+  total: number;
+  done: number;
+  overdue: number;
 }
 
 export async function loadDashboard(): Promise<DashboardData> {
@@ -49,7 +57,18 @@ export async function loadDashboard(): Promise<DashboardData> {
     ...(unassigned ? [{ member: null, open: unassigned }] : []),
   ];
 
+  const projectSummaries: ProjectSummary[] = [...activeProjects.values()]
+    .map((project) => {
+      const own = tasks.filter((t) => t.projectId === project.id);
+      const done = own.filter((t) => statusMap.get(t.statusId)?.isDone).length;
+      const overdue = attention.filter((a) => a.project.id === project.id && a.tone === 'overdue').length;
+      return { project, total: own.length, done, overdue };
+    })
+    .filter((p) => p.total > 0)
+    .sort((a, b) => b.total - b.done - (a.total - a.done));
+
   return {
+    projects: projectSummaries,
     openCount: open.length,
     dueTodayCount: attention.filter((a) => a.tone === 'today').length,
     overdueCount: attention.filter((a) => a.tone === 'overdue').length,

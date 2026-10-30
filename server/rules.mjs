@@ -3,11 +3,11 @@ import { HttpError } from './auth.mjs';
 
 const DEFAULT_STATUSES = [
   { name: 'To do', color: '#64748b', isDone: false },
-  { name: 'In progress', color: '#0284c7', isDone: false },
-  { name: 'Review', color: '#d97706', isDone: false },
-  { name: 'Done', color: '#059669', isDone: true },
+  { name: 'In progress', color: '#2550e8', isDone: false },
+  { name: 'Review', color: '#c9a227', isDone: false },
+  { name: 'Done', color: '#0a8c4e', isDone: true },
 ];
-const PALETTE = ['#0d9488', '#0284c7', '#2563eb', '#059669', '#65a30d', '#d97706', '#ea580c', '#e11d48', '#0891b2'];
+const PALETTE = ['#0a8c4e', '#c9a227', '#2550e8', '#0284c7', '#0d9488', '#d97706', '#ea580c', '#e11d48', '#7c3aed'];
 
 const str = (max, min = 0) => (v) => typeof v === 'string' && v.length >= min && v.length <= max;
 const color = (v) => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v);
@@ -88,7 +88,7 @@ export function createContext(store, me) {
       select: (row) => access(row.id) !== null,
       insert: {
         columns: ['name', 'description', 'color'],
-        defaults: () => ({ description: '', color: '#0d9488', archivedAt: null, isPersonal: false, ownerId: null, createdBy: me.id }),
+        defaults: () => ({ description: '', color: '#0a8c4e', archivedAt: null, isPersonal: false, ownerId: null, createdBy: me.id }),
         allow: () => canCreateProjects,
       },
       update: { columns: ['name', 'description', 'color', 'archivedAt'], allow: (row) => MANAGERS.includes(access(row.id)) },
@@ -344,7 +344,7 @@ export function createAccount(store, { name, email, authSource, role }) {
     id: randomUUID(),
     name: 'My space',
     description: 'Your private space. Only you can see it.',
-    color: '#0d9488',
+    color: '#0a8c4e',
     archivedAt: null,
     isPersonal: true,
     ownerId: profile.id,
@@ -369,7 +369,7 @@ export function changeUser(store, me, targetId, role, disabled) {
   if (targetId === me.id && (role !== 'governor' || disabled)) {
     throw new HttpError(400, 'You cannot remove your own governor role or disable your own account.');
   }
-  if (!wouldKeepAGovernor(db, target, role, disabled)) throw new HttpError(400, 'Workday needs at least one active governor.');
+  if (!wouldKeepAGovernor(db, target, role, disabled)) throw new HttpError(400, 'ActivTrack needs at least one active governor.');
   Object.assign(target, { role, disabled, updatedAt: nowIso() });
   return target;
 }

@@ -10,8 +10,8 @@ export const PRIORITY_META: Record<Priority, { label: string; rank: number; clas
   medium: {
     label: 'Medium',
     rank: 1,
-    className: 'bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300',
-    dot: 'bg-sky-500',
+    className: 'bg-info-50 text-info-700 dark:bg-info-950 dark:text-info-300',
+    dot: 'bg-info-500',
   },
   high: {
     label: 'High',

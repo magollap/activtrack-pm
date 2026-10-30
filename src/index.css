@@ -2,7 +2,131 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme tokens. Tailwind colours `slate`, `brand`, `gold`, `info` and `sidebar` read these variables
+ * (see tailwind.config.js), so every screen follows the theme without per-component changes.
+ *
+ * Light: green (brand) + gold (accent) + blue (info) on a cool white.
+ * Dark:  true black surfaces with gold as the brand and accent colour.
+ */
 @layer base {
+  :root {
+    color-scheme: light;
+
+    --slate-50: 248 250 252;
+    --slate-100: 241 245 249;
+    --slate-200: 226 232 240;
+    --slate-300: 203 213 225;
+    --slate-400: 148 163 184;
+    --slate-500: 100 116 139;
+    --slate-600: 71 85 105;
+    --slate-700: 51 65 85;
+    --slate-800: 30 41 59;
+    --slate-900: 15 23 42;
+    --slate-950: 2 6 23;
+
+    /* Green */
+    --brand-50: 237 252 243;
+    --brand-100: 211 248 225;
+    --brand-200: 170 239 199;
+    --brand-300: 114 224 165;
+    --brand-400: 57 201 127;
+    --brand-500: 21 173 98;
+    --brand-600: 10 140 78;
+    --brand-700: 9 112 65;
+    --brand-800: 11 89 54;
+    --brand-900: 11 73 46;
+    --brand-950: 3 41 25;
+    --brand-contrast: 255 255 255;
+
+    /* Gold */
+    --gold-50: 252 249 236;
+    --gold-100: 248 240 211;
+    --gold-200: 242 226 168;
+    --gold-300: 234 208 122;
+    --gold-400: 224 189 79;
+    --gold-500: 212 167 44;
+    --gold-600: 176 138 31;
+    --gold-700: 138 106 25;
+    --gold-800: 107 82 22;
+    --gold-900: 85 65 20;
+    --gold-950: 48 36 10;
+
+    /* Blue */
+    --info-50: 238 244 255;
+    --info-100: 219 231 254;
+    --info-200: 191 212 254;
+    --info-300: 147 183 253;
+    --info-400: 96 145 250;
+    --info-500: 59 108 245;
+    --info-600: 37 80 232;
+    --info-700: 29 63 212;
+    --info-800: 30 53 171;
+    --info-900: 30 50 135;
+    --info-950: 23 32 82;
+
+    /* Deep forest sidebar with gold highlights */
+    --sidebar-bg: 9 51 36;
+    --sidebar-fg: 231 243 236;
+    --sidebar-muted: 150 190 169;
+    --sidebar-hover: 18 72 52;
+    --sidebar-active: 22 86 62;
+    --sidebar-accent: 234 208 122;
+    --sidebar-border: 24 78 57;
+  }
+
+  .dark {
+    color-scheme: dark;
+
+    /* Warm blacks */
+    --slate-50: 250 249 245;
+    --slate-100: 243 241 235;
+    --slate-200: 229 226 218;
+    --slate-300: 205 200 188;
+    --slate-400: 168 162 149;
+    --slate-500: 138 133 122;
+    --slate-600: 74 71 65;
+    --slate-700: 46 44 41;
+    --slate-800: 29 28 26;
+    --slate-900: 18 18 17;
+    --slate-950: 7 7 7;
+
+    /* Gold becomes the brand colour */
+    --brand-50: 252 249 236;
+    --brand-100: 248 240 211;
+    --brand-200: 242 226 168;
+    --brand-300: 234 208 122;
+    --brand-400: 224 189 79;
+    --brand-500: 212 167 44;
+    --brand-600: 176 138 31;
+    --brand-700: 138 106 25;
+    --brand-800: 107 82 22;
+    --brand-900: 85 65 20;
+    --brand-950: 48 36 10;
+    --brand-contrast: 10 10 9;
+
+    /* Champagne instead of blue, so dark mode stays black and gold */
+    --info-50: 251 248 240;
+    --info-100: 244 238 221;
+    --info-200: 233 223 192;
+    --info-300: 220 203 152;
+    --info-400: 205 181 116;
+    --info-500: 191 162 90;
+    --info-600: 160 132 71;
+    --info-700: 125 103 58;
+    --info-800: 90 75 45;
+    --info-900: 58 49 32;
+    --info-950: 29 25 16;
+
+    --sidebar-bg: 0 0 0;
+    --sidebar-fg: 229 226 218;
+    --sidebar-muted: 138 133 122;
+    --sidebar-hover: 22 21 19;
+    --sidebar-active: 33 29 18;
+    --sidebar-accent: 224 189 79;
+    --sidebar-border: 29 28 26;
+  }
+
   html {
     -webkit-tap-highlight-color: transparent;
   }
@@ -16,6 +140,13 @@
   :focus-visible {
     @apply outline-none ring-2 ring-brand-500/60 ring-offset-1 ring-offset-white dark:ring-offset-slate-900;
   }
+  /* Smooth the switch between themes without animating every hover. */
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: background-color 250ms ease, border-color 250ms ease, color 250ms ease, fill 250ms ease !important;
+  }
 }
 
 @layer components {
@@ -23,7 +154,10 @@
     @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-primary {
-    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 active:bg-brand-800;
+    @apply btn bg-brand-600 text-brand-contrast shadow-sm hover:bg-brand-700 active:bg-brand-800 dark:bg-brand-500 dark:hover:bg-brand-400 dark:active:bg-brand-300;
+  }
+  .btn-gold {
+    @apply btn bg-gold-500 text-slate-950 shadow-sm hover:bg-gold-400 active:bg-gold-600 dark:text-black;
   }
   .btn-secondary {
     @apply btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
@@ -45,5 +179,8 @@
   }
   .card {
     @apply rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900;
+  }
+  .kbd {
+    @apply inline-flex min-w-[1.25rem] items-center justify-center rounded border border-slate-200 bg-slate-50 px-1 font-sans text-[10px] font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400;
   }
 }

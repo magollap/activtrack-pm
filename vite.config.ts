@@ -11,14 +11,14 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Workday',
-        short_name: 'Workday',
-        description: 'Simple project and task management that works offline.',
+        name: 'ActivTrack',
+        short_name: 'ActivTrack',
+        description: 'Project and task management with AI skills. Works offline.',
         start_url: '/',
         scope: '/',
         display: 'standalone',
         background_color: '#ffffff',
-        theme_color: '#0d9488',
+        theme_color: '#097041',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },

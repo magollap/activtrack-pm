@@ -33,15 +33,27 @@ function write(key: string, value: unknown): void {
   }
 }
 
-const stringArray = (value: unknown): string[] =>
+function remove(key: string): void {
+  try {
+    localStorage.removeItem(PREFS_PREFIX + key);
+  } catch {
+    // Ignore storage that is unavailable (private mode, blocked site data).
+  }
+}
+
+const stringArray =(value: unknown): string[] =>
   Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
 
+/** The saved choice; null means "follow the device". */
 export function getTheme(): Theme | null {
   const value = read('theme');
   return value === 'light' || value === 'dark' ? value : null;
 }
 
-export const setTheme = (theme: Theme): void => write('theme', theme);
+export function setTheme(theme: Theme | null): void {
+  if (theme) write('theme', theme);
+  else remove('theme');
+}
 
 export function getProjectView(projectId: string): ProjectView {
   const value = read(`view:${projectId}`);

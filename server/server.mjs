@@ -109,7 +109,7 @@ stat(join(ROOT, 'index.html'))
   .then(() => {
     server.listen(PORT, HOST, () => {
       const shown = HOST === '0.0.0.0' ? 'localhost' : HOST;
-      console.log(`Workday is running at http://${shown}:${PORT}`);
+      console.log(`ActivTrack is running at http://${shown}:${PORT}`);
       console.log(`Data is stored in ${store.file}`);
     });
   })

@@ -37,7 +37,7 @@ export function CalendarDay({ day, month, tasks, statuses, editable, onOpenTask,
     >
       <span
         className={`mb-0.5 inline-flex h-6 w-6 items-center justify-center self-start rounded-full text-xs font-medium ${
-          today ? 'bg-brand-600 text-white' : inMonth ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-600'
+          today ? 'bg-brand-600 text-brand-contrast' : inMonth ? 'text-slate-700 dark:text-slate-300' : 'text-slate-400 dark:text-slate-600'
         }`}
       >
         {format(day, 'd')}

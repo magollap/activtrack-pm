@@ -13,6 +13,10 @@ const TABLES: Record<CollectionName, string> = {
   taskHistory: 'task_history',
 };
 
+const FROM_TABLE: Record<string, CollectionName> = Object.fromEntries(
+  Object.entries(TABLES).map(([collection, tableName]) => [tableName, collection as CollectionName]),
+);
+
 const TO_DB: Record<string, string> = { order: 'position', from: 'from_value', to: 'to_value' };
 const FROM_DB: Record<string, string> = Object.fromEntries(Object.entries(TO_DB).map(([k, v]) => [v, k]));
 
@@ -63,7 +67,7 @@ function authError(message: string): Error {
   return new Error(AUTH_ERRORS.find(([pattern]) => pattern.test(message))?.[1] ?? message);
 }
 
-const LOCAL_ONLY = 'This setting is only available when Workday is installed on your own server.';
+const LOCAL_ONLY = 'This setting is only available when ActivTrack is installed on your own server.';
 
 export function createSupabaseBackend(url: string, anonKey: string): Backend {
   const supabase = createClient(url, anonKey);
@@ -112,7 +116,7 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
     },
 
     async signIn(method, identifier, password) {
-      if (method !== 'local') throw new Error('Directory (LDAP) sign-in is only available on installed versions of Workday.');
+      if (method !== 'local') throw new Error('Directory (LDAP) sign-in is only available on installed versions of ActivTrack.');
       const { error } = await supabase.auth.signInWithPassword({ email: identifier.trim(), password });
       if (error) throw authError(error.message);
     },
@@ -179,6 +183,37 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
 
     async testLdap() {
       throw new Error(LOCAL_ONLY);
+    },
+
+    async apiHeaders() {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error('Your session has ended. Please sign in again.');
+      return { Authorization: `Bearer ${token}` };
+    },
+
+    watch(listener) {
+      // Supabase Realtime sends row changes the signed-in person is allowed to see (row level security applies).
+      // Tables must be in the supabase_realtime publication; see supabase/migrations/*_realtime.sql.
+      const pending = new Set<CollectionName>();
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const channel = supabase
+        .channel('activtrack-live')
+        .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+          const collection = FROM_TABLE[payload.table];
+          if (!collection) return;
+          pending.add(collection);
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            pending.forEach(listener);
+            pending.clear();
+          }, 250);
+        })
+        .subscribe();
+      return () => {
+        clearTimeout(timer);
+        void supabase.removeChannel(channel);
+      };
     },
   };
 }

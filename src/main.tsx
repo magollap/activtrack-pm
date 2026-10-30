@@ -5,6 +5,7 @@ import App from '@/App';
 import { ToastProvider } from '@/hooks/useToast';
 import { InstallPromptProvider } from '@/hooks/useInstallPrompt';
 import { AuthProvider } from '@/features/auth/AuthProvider';
+import { ThemeProvider } from '@/hooks/useTheme';
 import { selectBackend } from '@/lib/backend';
 import { errorMessage } from '@/lib/errors';
 import './index.css';
@@ -16,13 +17,15 @@ selectBackend()
     root.render(
       <StrictMode>
         <BrowserRouter>
-          <ToastProvider>
-            <InstallPromptProvider>
-              <AuthProvider>
-                <App />
-              </AuthProvider>
-            </InstallPromptProvider>
-          </ToastProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <InstallPromptProvider>
+                <AuthProvider>
+                  <App />
+                </AuthProvider>
+              </InstallPromptProvider>
+            </ToastProvider>
+          </ThemeProvider>
         </BrowserRouter>
       </StrictMode>,
     );

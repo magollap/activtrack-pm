@@ -10,9 +10,9 @@ export interface ProjectInput {
 
 export const DEFAULT_STATUSES = [
   { name: 'To do', color: '#64748b', isDone: false },
-  { name: 'In progress', color: '#0284c7', isDone: false },
-  { name: 'Review', color: '#d97706', isDone: false },
-  { name: 'Done', color: '#059669', isDone: true },
+  { name: 'In progress', color: '#2550e8', isDone: false },
+  { name: 'Review', color: '#c9a227', isDone: false },
+  { name: 'Done', color: '#0a8c4e', isDone: true },
 ];
 
 function clean(input: ProjectInput): ProjectInput {

@@ -12,7 +12,7 @@ export function DataSettings() {
 
   const downloadCsv = async () => {
     try {
-      downloadFile(`workday-tasks-${format(new Date(), 'yyyy-MM-dd')}.csv`, await exportTasksCsv(), 'text/csv;charset=utf-8');
+      downloadFile(`activtrack-tasks-${format(new Date(), 'yyyy-MM-dd')}.csv`, await exportTasksCsv(), 'text/csv;charset=utf-8');
       toast.success('Tasks exported');
     } catch (e) {
       toast.error(e);
@@ -29,7 +29,7 @@ export function DataSettings() {
           <p className="text-sm font-medium">{kind === 'local' ? 'Stored on your server' : 'Stored in the cloud'}</p>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {kind === 'local'
-              ? 'Everything is saved in the data folder of the machine Workday is installed on. Back up that folder to keep a copy.'
+              ? 'Everything is saved in the data folder of the machine ActivTrack is installed on. Back up that folder to keep a copy.'
               : 'Everything is saved securely online, so you see the same projects on every device you sign in from.'}
           </p>
         </div>

@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { ListGroup } from '@/features/list/ListGroup';
+import { BulkActionBar } from '@/features/list/BulkActionBar';
 import { sortTasks, type SortKey, type SortState } from '@/features/list/sortTasks';
 import type { TaskViewProps } from '@/features/projects/taskViewProps';
 
@@ -15,6 +16,23 @@ const COLUMNS: { key: SortKey; label: string }[] = [
 export function ListView({ statuses, tasks, members, editable, onOpenTask }: TaskViewProps) {
   const [sort, setSort] = useState<SortState>({ key: 'manual', dir: 'asc' });
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Forget selections for cards that disappeared (deleted, or hidden by a filter).
+  useEffect(() => {
+    setSelected((set) => {
+      const visible = new Set(tasks.map((t) => t.id));
+      const next = new Set([...set].filter((id) => visible.has(id)));
+      return next.size === set.size ? set : next;
+    });
+  }, [tasks]);
+
+  const select = (ids: string[], on: boolean) =>
+    setSelected((set) => {
+      const next = new Set(set);
+      ids.forEach((id) => (on ? next.add(id) : next.delete(id)));
+      return next;
+    });
   const memberMap = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
   const sorted = useMemo(() => sortTasks(tasks, sort, memberMap), [tasks, sort, memberMap]);
 
@@ -63,6 +81,9 @@ export function ListView({ statuses, tasks, members, editable, onOpenTask }: Tas
           <option value="assignee:asc">Assignee</option>
         </select>
       </div>
+      {editable && selected.size > 0 && (
+        <BulkActionBar taskIds={[...selected]} statuses={statuses} members={members} onDone={() => setSelected(new Set())} />
+      )}
       {statuses.map((status) => (
         <ListGroup
           key={status.id}
@@ -72,6 +93,8 @@ export function ListView({ statuses, tasks, members, editable, onOpenTask }: Tas
           members={members}
           editable={editable}
           collapsed={collapsed.has(status.id)}
+          selected={selected}
+          onSelect={select}
           onToggle={() => toggleGroup(status.id)}
           onOpenTask={onOpenTask}
         />

@@ -23,7 +23,7 @@ export interface ProjectData {
   access: ProjectAccess | null;
 }
 
-async function loadProjectData(projectId: string, me: Member): Promise<ProjectData | null> {
+export async function loadProjectData(projectId: string, me: Member): Promise<ProjectData | null> {
   const project = await getProject(projectId);
   if (!project) return null;
   const [statuses, tasks, profiles, memberships] = await Promise.all([

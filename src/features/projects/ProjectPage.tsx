@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { FolderX, SearchX, ListPlus } from 'lucide-react';
+import { FolderX, SearchX, ListPlus, Sparkles } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState, LoadingState } from '@/components/QueryStates';
 import { ProjectHeader } from '@/features/projects/ProjectHeader';
@@ -17,6 +17,8 @@ import { canWrite, isGovernor } from '@/lib/db/access';
 import { useProjectFilters } from '@/hooks/useProjectFilters';
 import { applyFilters, countActiveFilters } from '@/lib/filters';
 import { EMPTY_FILTERS, getProjectView, setProjectView, type ProjectView } from '@/lib/prefs';
+import { isTyping, MOD_KEY, openAssistant, runCommand } from '@/lib/commands';
+import { ProjectProgress } from '@/features/projects/ProjectProgress';
 
 export function ProjectPage() {
   const { projectId = '' } = useParams();
@@ -43,6 +45,24 @@ export function ProjectPage() {
     setView(next);
     setProjectView(projectId, next);
   };
+
+  // N adds a card; B, L and C switch views.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target) || document.querySelector('[aria-modal="true"]')) return;
+      const views: Record<string, ProjectView> = { b: 'board', l: 'list', c: 'calendar' };
+      const key = e.key.toLowerCase();
+      if (key === 'n') {
+        e.preventDefault();
+        if (view === 'calendar') changeView('board');
+        setTimeout(() => runCommand('quick-add'), 0);
+      } else if (views[key]) {
+        changeView(views[key]);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
 
   if (loading && !data) return <LoadingState />;
   if (error) return <ErrorState message={error} />;
@@ -71,8 +91,21 @@ export function ProjectPage() {
           <ViewSwitcher view={view} onChange={changeView} />
           <FilterToolbar filters={filters} onChange={setFilters} statuses={statuses} members={members} />
         </div>
+        <ProjectProgress statuses={statuses} tasks={tasks} />
         {editable && !project.archivedAt && view !== 'calendar' && firstOpenStatus && (
-          <QuickAdd projectId={projectId} statusId={firstOpenStatus.id} placeholder={`Add a task to ${firstOpenStatus.name}, press Enter`} />
+          <div className="flex gap-2">
+            <div className="min-w-0 flex-1">
+              <QuickAdd projectId={projectId} statusId={firstOpenStatus.id} listenForShortcut placeholder={`Add a card to ${firstOpenStatus.name}, press Enter (N)`} />
+            </div>
+            <button
+              type="button"
+              className="btn shrink-0 border border-gold-300 bg-gold-50 text-gold-800 hover:bg-gold-100 dark:border-gold-500/40 dark:bg-gold-500/10 dark:text-gold-300 dark:hover:bg-gold-500/20"
+              onClick={() => openAssistant()}
+              title={`Add or move cards in plain English (${MOD_KEY}+K)`}
+            >
+              <Sparkles className="h-4 w-4" /> <span className="hidden sm:inline">AI</span>
+            </button>
+          </div>
         )}
       </div>
 

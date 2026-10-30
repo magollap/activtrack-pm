@@ -1,12 +1,12 @@
-// Zero-dependency icon generator: draws the Workday "W" mark and writes PNGs into public/.
+// Zero-dependency icon generator: draws the ActivTrack pulse mark and writes PNGs into public/.
 // Run with: npm run icons
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
 
-const BG = [13, 148, 136];
-const FG = [255, 255, 255];
-const W_POINTS = [[0.2, 0.3], [0.35, 0.72], [0.5, 0.4], [0.65, 0.72], [0.8, 0.3]];
-const STROKE = 0.1;
+const BG = [9, 112, 65];
+const FG = [234, 208, 122];
+const W_POINTS = [[11, 35], [22, 35], [28, 18], [37, 47], [43, 30], [53, 30]].map(([x, y]) => [x / 64, y / 64]);
+const STROKE = 6 / 64;
 const SAMPLES = 4;
 
 const crcTable = Array.from({ length: 256 }, (_, n) => {
