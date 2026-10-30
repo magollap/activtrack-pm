@@ -60,7 +60,8 @@ export interface Backend {
   currentUserId(): Promise<string | null>;
   authOptions(): Promise<AuthOptions>;
   signIn(method: SignInMethod, identifier: string, password: string): Promise<void>;
-  signUp(name: string, email: string, password: string): Promise<void>;
+  /** confirmEmail is true when the account exists but the person must click the emailed link before signing in. */
+  signUp(name: string, email: string, password: string): Promise<{ confirmEmail: boolean }>;
   signOut(): Promise<void>;
   onAuthChange(listener: () => void): () => void;
 

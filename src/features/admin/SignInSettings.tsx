@@ -119,7 +119,7 @@ export function SignInSettings() {
           <p className="text-xs text-slate-500 dark:text-slate-400">Choose how people get into ActivTrack. Admins can always use their ActivTrack password, even when it is turned off for everyone else.</p>
         </header>
         <MethodRow icon={KeyRound} title="ActivTrack passwords" description="People sign in with an email and a password stored on this server." checked={draft.localEnabled} onChange={(v) => set({ localEnabled: v })} />
-        <MethodRow icon={UserPlus} title="Open sign-up" description="Anyone who can reach this server can create a ActivTrack account. New accounts only see their own private space." checked={draft.signUpEnabled} onChange={(v) => set({ signUpEnabled: v })} />
+        <MethodRow icon={UserPlus} title="Open sign-up" description="Anyone who can reach this server can create an ActivTrack account. New accounts only see their own private space." checked={draft.signUpEnabled} onChange={(v) => set({ signUpEnabled: v })} />
         <MethodRow icon={Network} title="Company directory (LDAP)" description="People sign in with their directory username and password. Their account is created on first sign-in." checked={draft.ldapEnabled} onChange={(v) => set({ ldapEnabled: v })} />
       </section>
 
