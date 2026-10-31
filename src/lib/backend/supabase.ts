@@ -38,6 +38,8 @@ function fromDb<T>(row: Record<string, unknown>): T {
 }
 
 function friendly(error: PostgrestError | { message: string; code?: string }): Error {
+  // Our own permission messages (such as locked fields) are written for people; keep them.
+  if (error.code === '42501' && /is locked\. Only project leads/.test(error.message)) return new Error(error.message);
   if (error.code === '42501') return new Error('You do not have permission to do that.');
   if (error.code === '23503') return new Error('This item is linked to something that no longer exists.');
   if (error.code === '23514') return new Error('Some of the values you entered are not allowed.');

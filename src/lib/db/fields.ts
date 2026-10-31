@@ -17,7 +17,12 @@ export interface FieldInput {
   type: FieldType;
   options: FieldOption[];
   showOnCard: boolean;
+  /** "Project leads only": everyone sees the value, only leads and governors change it. */
+  locked?: boolean;
 }
+
+const LOCK_MIGRATION = 'supabase/migrations/20261031160000_locked_fields.sql';
+const missingLockColumn = (error: unknown) => /locked/i.test(error instanceof Error ? error.message : String(error)) && /column|schema cache/i.test(error instanceof Error ? error.message : String(error));
 
 const byOrder = (a: CustomField, b: CustomField) => a.order - b.order || a.createdAt.localeCompare(b.createdAt);
 
@@ -48,14 +53,14 @@ function clean(input: FieldInput): FieldInput {
   if (!FIELD_TYPES.includes(input.type)) throw new Error('Choose a field type.');
   const options = input.type === 'select' ? cleanOptions(input.options) : [];
   if (input.type === 'select' && !options.length) throw new Error('Add at least one choice to the dropdown.');
-  return { name, type: input.type, options, showOnCard: input.showOnCard };
+  return { name, type: input.type, options, showOnCard: input.showOnCard, locked: input.locked === true };
 }
 
 /** Fields for one project (or all you can see). Returns [] on databases without the custom fields table yet. */
 export async function listFields(projectId?: string): Promise<CustomField[]> {
   try {
     const rows = await table('customFields').list(projectId ? { projectId } : undefined);
-    return rows.map((f) => ({ ...f, options: Array.isArray(f.options) ? f.options : [] })).sort(byOrder);
+    return rows.map((f) => ({ ...f, options: Array.isArray(f.options) ? f.options : [], locked: f.locked === true })).sort(byOrder);
   } catch (error) {
     if (isMissingTable(error)) return [];
     throw error;
@@ -72,9 +77,14 @@ export async function createField(projectId: string, input: FieldInput): Promise
   const existing = await listFields(projectId);
   if (existing.length >= 30) throw new Error('A project can have at most 30 custom fields.');
   const order = existing.length ? existing[existing.length - 1].order + 1 : 0;
+  const { locked, ...rest } = clean(input);
   try {
-    return await table('customFields').insert({ ...clean(input), projectId, order });
+    // "locked" is only sent when set, so databases without the locked-fields update still work.
+    return await table('customFields').insert({ ...rest, ...(locked ? { locked } : {}), projectId, order });
   } catch (error) {
+    if (locked && missingLockColumn(error)) {
+      return table('customFields').insert({ ...rest, projectId, order });
+    }
     if (isMissingTable(error)) {
       throw new Error('Custom fields need a one-time database update. Run supabase/migrations/20261030160000_custom_fields_templates.sql in the Supabase SQL Editor.');
     }
@@ -83,10 +93,27 @@ export async function createField(projectId: string, input: FieldInput): Promise
 }
 
 /** The type cannot change after creation, so existing values always match it. */
-export const updateField = (id: string, input: FieldInput): Promise<CustomField> => {
-  const { name, options, showOnCard } = clean(input);
-  return table('customFields').update(id, { name, options, showOnCard });
-};
+export async function updateField(id: string, input: FieldInput, previous?: Pick<CustomField, 'locked'>): Promise<CustomField> {
+  const { name, options, showOnCard, locked } = clean(input);
+  const lockChanged = locked !== (previous?.locked === true);
+  try {
+    return await table('customFields').update(id, { name, options, showOnCard, ...(lockChanged ? { locked } : {}) });
+  } catch (error) {
+    if (missingLockColumn(error)) {
+      throw new Error(`Locking fields needs a one-time database update. Run ${LOCK_MIGRATION} in the Supabase SQL Editor.`);
+    }
+    throw error;
+  }
+}
+
+/** True when this person may set the field's value on a card. */
+export const canEditField = (field: Pick<CustomField, 'locked'>, canManageProject: boolean): boolean => !field.locked || canManageProject;
+
+/** Drops locked fields' values: used when someone who can't set them copies a card. */
+export function withoutLockedValues(values: Record<string, FieldValue> | undefined, fields: CustomField[]): Record<string, FieldValue> {
+  const locked = new Set(fields.filter((f) => f.locked).map((f) => f.id));
+  return Object.fromEntries(Object.entries(values ?? {}).filter(([id]) => !locked.has(id)));
+}
 
 export async function reorderFields(orderedIds: string[]): Promise<void> {
   await table('customFields').updateMany(orderedIds.map((id, order) => ({ id, patch: { order } })));

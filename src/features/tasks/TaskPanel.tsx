@@ -60,7 +60,7 @@ export function TaskPanel({ taskId, statuses, members, fields, access, onClose }
   const duplicate = async () => {
     if (!task) return;
     try {
-      const copy = await duplicateTask(task.id);
+      const copy = await duplicateTask(task.id, canManage(access));
       toast.success('Card duplicated');
       setSearchParams((p) => { p.set('task', copy.id); return p; });
     } catch (error) {

@@ -223,6 +223,24 @@ export const HELP: HelpGroup[] = [
             heading: 'Fill in a field',
             text: 'Open a card. In **Details → Fields**, type or pick the value. It saves when you click away. You can also filter and sort by fields in **List** view.',
           },
+          {
+            heading: 'Lock a field to project leads (for example Epic, Feature, Type)',
+            text: 'Planning fields stay tidy when only the scrum master or project lead sets them. Everyone can still see a locked field; for anyone else it is greyed out with a padlock.',
+            steps: [
+              'Open the project and click **Fields**.',
+              'Click the padlock next to the field. It turns gold and the field shows **Project leads only**.',
+              'Or click the pencil, set **Who can change values** to **Project leads only (others see it greyed out)**, and click **Save field**.',
+              'To open it up again, click the padlock once more (or choose **Everyone who can edit cards**).',
+            ],
+            tip: 'We suggest leaving **Story points** open: in Scrum the team estimates its own work. Every change is recorded in the card\'s **History** tab.',
+          },
+          {
+            heading: 'Who can change a locked field',
+            bullets: [
+              '**Project leads** of that project and **Governors**.',
+              'Everyone else sees the value greyed out. The rule is enforced by the server, so it also applies to bulk edits, the AI assistant and duplicated cards (a copy made by a team member leaves locked fields empty for the lead to fill in).',
+            ],
+          },
         ],
       },
       {
@@ -700,7 +718,11 @@ export const HELP: HelpGroup[] = [
         topics: [
           {
             heading: '"…needs a one-time database update"',
-            text: 'A newer feature (custom fields, templates, automations, status updates, files or time tracking) needs a table that isn\'t in the database yet. The site owner runs the SQL file named in the message once, in Supabase → SQL Editor. The rest of the app keeps working meanwhile.',
+            text: 'A newer feature (custom fields, templates, automations, status updates, files, time tracking or locked fields) needs a table that isn\'t in the database yet. The site owner runs the SQL file named in the message once, in Supabase → SQL Editor. The rest of the app keeps working meanwhile.',
+          },
+          {
+            heading: 'A field is greyed out with a padlock',
+            text: 'The project lead has locked it to **Project leads only** (see **Custom fields → Lock a field**). Ask them to change it, or to unlock the field.',
           },
           {
             heading: 'I can\'t edit anything / "View only"',

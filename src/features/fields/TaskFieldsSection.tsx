@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ExternalLink, Settings2 } from 'lucide-react';
+import { ExternalLink, Lock, Settings2 } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
-import { cleanFieldValue, withFieldValue } from '@/lib/db/fields';
+import { canEditField, cleanFieldValue, withFieldValue } from '@/lib/db/fields';
 import { updateTask } from '@/lib/db/tasks';
 import type { CustomField, FieldValue, Task } from '@/lib/db/types';
 
@@ -9,11 +9,13 @@ interface TaskFieldsSectionProps {
   task: Task;
   fields: CustomField[];
   editable: boolean;
+  /** Project lead or governor: may also change locked fields. */
+  manage?: boolean;
   onManage?: () => void;
 }
 
 /** Editors for a card's custom fields, saved as you go. */
-export function TaskFieldsSection({ task, fields, editable, onManage }: TaskFieldsSectionProps) {
+export function TaskFieldsSection({ task, fields, editable, manage = false, onManage }: TaskFieldsSectionProps) {
   const toast = useToast();
 
   if (!fields.length) {
@@ -45,14 +47,27 @@ export function TaskFieldsSection({ task, fields, editable, onManage }: TaskFiel
           </button>
         )}
       </div>
+      {editable && !manage && fields.some((f) => f.locked) && (
+        <p className="mb-2 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+          <Lock className="h-3 w-3" /> Locked fields can only be changed by project leads.
+        </p>
+      )}
       <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
         {fields.map((field) => (
-          <FieldEditor key={field.id} field={field} value={task.customValues?.[field.id] ?? null} editable={editable} onSave={(raw) => save(field, raw)} />
+          <FieldEditor
+            key={field.id}
+            field={field}
+            value={task.customValues?.[field.id] ?? null}
+            editable={editable && canEditField(field, manage)}
+            onSave={(raw) => save(field, raw)}
+          />
         ))}
       </div>
     </section>
   );
 }
+
+const lockTitle = (field: CustomField) => (field.locked ? 'Locked: only project leads can change this field' : undefined);
 
 function FieldEditor({ field, value, editable, onSave }: { field: CustomField; value: FieldValue; editable: boolean; onSave: (raw: unknown) => void }) {
   const id = `field-${field.id}`;
@@ -65,9 +80,10 @@ function FieldEditor({ field, value, editable, onSave }: { field: CustomField; v
 
   if (field.type === 'checkbox') {
     return (
-      <label htmlFor={id} className="flex items-center gap-2.5 self-end rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700">
+      <label htmlFor={id} className={`flex items-center gap-2.5 self-end rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-slate-700 ${editable ? '' : 'bg-slate-50 text-slate-500 dark:bg-slate-800/50'}`} title={lockTitle(field)}>
         <input id={id} type="checkbox" checked={value === true} disabled={!editable} onChange={(e) => onSave(e.target.checked)} className="h-4 w-4 accent-brand-600" />
         {field.name}
+        {field.locked && <Lock className="ml-auto h-3.5 w-3.5 text-slate-400" aria-label="Locked" />}
       </label>
     );
   }
@@ -76,7 +92,10 @@ function FieldEditor({ field, value, editable, onSave }: { field: CustomField; v
 
   return (
     <div>
-      <label className="label" htmlFor={id}>{field.name}</label>
+      <label className="label flex items-center gap-1.5" htmlFor={id} title={lockTitle(field)}>
+        {field.name}
+        {field.locked && <Lock className="h-3 w-3 text-slate-400" aria-label="Locked" />}
+      </label>
       {field.type === 'select' ? (
         <div className="relative">
           {selected && <span className="pointer-events-none absolute left-3 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full" style={{ backgroundColor: selected.color }} />}
