@@ -26,6 +26,9 @@ const fieldOptions = (v) =>
   Array.isArray(v) && sized(10000)(v) && v.every((o) => plainObject(o) && id(o.id) && str(60, 1)(o.label) && color(o.color));
 const templateData = (v) => plainObject(v) && sized(200000)(v);
 const FIELD_TYPES = ['text', 'number', 'date', 'select', 'checkbox', 'url'];
+const automationTrigger = (v) => plainObject(v) && sized(2000)(v) && ['task_created', 'status_changed', 'priority_changed'].includes(v.type);
+const automationActions = (v) => Array.isArray(v) && v.length <= 10 && sized(10000)(v) && v.every((a) => plainObject(a) && typeof a.type === 'string');
+const minutes = (v) => Number.isInteger(v) && v >= 0 && v <= 100000;
 
 export const ROLES = ['governor', 'delegate', 'reporter'];
 const WRITERS = ['write', 'write_delete', 'lead', 'manage'];
@@ -196,6 +199,50 @@ export function createContext(store, me) {
       update: { columns: ['name', 'options', 'order', 'showOnCard'], allow: (row) => MANAGERS.includes(access(row.projectId)) },
       remove: (row) => MANAGERS.includes(access(row.projectId)),
     },
+    automations: {
+      fields: { projectId: id, name: str(80, 1), enabled: bool, trigger: automationTrigger, actions: automationActions },
+      select: (row) => access(row.projectId) !== null,
+      insert: {
+        columns: ['projectId', 'name', 'enabled', 'trigger', 'actions'],
+        defaults: () => ({ enabled: true, createdBy: me.id }),
+        allow: (row) => MANAGERS.includes(access(row.projectId)),
+      },
+      update: { columns: ['name', 'enabled', 'trigger', 'actions'], allow: (row) => MANAGERS.includes(access(row.projectId)) },
+      remove: (row) => MANAGERS.includes(access(row.projectId)),
+    },
+    statusUpdates: {
+      fields: { projectId: id, health: oneOf('on_track', 'at_risk', 'off_track', 'complete'), title: str(120, 1), body: str(10000) },
+      select: (row) => access(row.projectId) !== null,
+      insert: {
+        columns: ['projectId', 'health', 'title', 'body'],
+        defaults: () => ({ body: '', authorId: me.id }),
+        allow: (row) => MANAGERS.includes(access(row.projectId)),
+      },
+      update: { columns: ['health', 'title', 'body'], allow: (row) => row.authorId === me.id && MANAGERS.includes(access(row.projectId)) },
+      remove: (row) => MANAGERS.includes(access(row.projectId)),
+    },
+    timeEntries: {
+      fields: { taskId: id, startedAt: iso, endedAt: nullable(iso), minutes, note: str(500) },
+      select: (row) => taskAccess(row.taskId) !== null,
+      insert: {
+        columns: ['taskId', 'startedAt', 'endedAt', 'minutes', 'note'],
+        defaults: () => ({ startedAt: nowIso(), endedAt: null, minutes: 0, note: '', userId: me.id }),
+        allow: (row) => canWriteTask(row.taskId),
+      },
+      update: { columns: ['startedAt', 'endedAt', 'minutes', 'note'], allow: (row) => row.userId === me.id && canWriteTask(row.taskId) },
+      remove: (row) => (row.userId === me.id && taskAccess(row.taskId) !== null) || MANAGERS.includes(taskAccess(row.taskId)),
+    },
+    attachments: {
+      fields: { taskId: id, name: str(255, 1), size: (v) => Number.isInteger(v) && v >= 0 && v <= 26214400, mimeType: str(150), path: str(500, 1) },
+      select: (row) => taskAccess(row.taskId) !== null,
+      insert: {
+        columns: ['taskId', 'name', 'size', 'mimeType', 'path'],
+        defaults: () => ({ mimeType: 'application/octet-stream', uploadedBy: me.id }),
+        // The file must sit in this card's own folder, so a record can never point at another project's file.
+        allow: (row) => canWriteTask(row.taskId) && row.path.startsWith(`${task(row.taskId)?.projectId}/${row.taskId}/`),
+      },
+      remove: (row) => (row.uploadedBy === me.id && canWriteTask(row.taskId)) || MANAGERS.includes(taskAccess(row.taskId)),
+    },
     projectTemplates: {
       fields: { name: str(80, 1), description: str(2000), color, data: templateData },
       select: () => !me.disabled,
@@ -209,7 +256,7 @@ export function createContext(store, me) {
     },
   };
 
-  return { db, me, isGovernor, access, rules: RULES };
+  return { db, me, isGovernor, access, taskAccess, canWriteTask, rules: RULES, removedFiles: [] };
 }
 
 const denied = () => new HttpError(403, 'You do not have permission to do that.');
@@ -322,7 +369,7 @@ export function updateRow(ctx, collection, rowId, patch) {
   return next;
 }
 
-function cascade(db, collection, removed) {
+function cascade(db, collection, removed, removedFiles = []) {
   const ids = new Set(removed.map((r) => r.id));
   const drop = (name, key) => {
     const gone = db[name].filter((r) => ids.has(r[key]));
@@ -333,13 +380,18 @@ function cascade(db, collection, removed) {
     drop('statuses', 'projectId');
     drop('projectMembers', 'projectId');
     drop('customFields', 'projectId');
-    cascade(db, 'tasks', drop('tasks', 'projectId'));
+    drop('automations', 'projectId');
+    drop('statusUpdates', 'projectId');
+    cascade(db, 'tasks', drop('tasks', 'projectId'), removedFiles);
   }
   if (collection === 'tasks') {
     drop('checklistItems', 'taskId');
     drop('comments', 'taskId');
     drop('taskHistory', 'taskId');
+    drop('timeEntries', 'taskId');
+    removedFiles.push(...drop('attachments', 'taskId').map((a) => a.path));
   }
+  if (collection === 'attachments') removedFiles.push(...removed.map((a) => a.path));
 }
 
 export function removeRows(ctx, collection, filter) {
@@ -351,7 +403,7 @@ export function removeRows(ctx, collection, filter) {
   }
   const ids = new Set(doomed.map((r) => r.id));
   ctx.db[collection] = ctx.db[collection].filter((row) => !ids.has(row.id));
-  cascade(ctx.db, collection, doomed);
+  cascade(ctx.db, collection, doomed, ctx.removedFiles);
   return doomed.length;
 }
 

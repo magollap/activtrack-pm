@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { FolderKanban } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import type { ProjectSummary } from '@/features/home/loadDashboard';
+import { HealthBadge } from '@/features/status/StatusUpdates';
 
 /** Completion per project, most open work first. */
 export function ProjectsOverview({ projects }: { projects: ProjectSummary[] }) {
@@ -15,7 +16,7 @@ export function ProjectsOverview({ projects }: { projects: ProjectSummary[] }) {
         <EmptyState compact icon={FolderKanban} title="No cards yet" message="Add cards to a project and its progress shows up here." />
       ) : (
         <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-          {projects.slice(0, 8).map(({ project, total, done, overdue }) => {
+          {projects.slice(0, 8).map(({ project, total, done, overdue, latestUpdate }) => {
             const percent = Math.round((done / total) * 100);
             return (
               <li key={project.id}>
@@ -23,6 +24,7 @@ export function ProjectsOverview({ projects }: { projects: ProjectSummary[] }) {
                   <div className="flex items-center gap-2 text-sm">
                     <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: project.color }} />
                     <span className="min-w-0 flex-1 truncate font-medium">{project.name}</span>
+                    {latestUpdate && <HealthBadge health={latestUpdate.health} />}
                     {overdue > 0 && <span className="rounded-full bg-red-50 px-2 text-[11px] font-medium text-red-700 dark:bg-red-950/60 dark:text-red-300">{overdue} overdue</span>}
                     <span className="tabular-nums text-xs text-slate-500 dark:text-slate-400">{done}/{total}</span>
                   </div>

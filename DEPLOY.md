@@ -36,6 +36,11 @@ This lets open browser tabs refresh by themselves when a teammate changes a card
 In **SQL Editor → New query**, paste the contents of
 `supabase/migrations/20261030160000_custom_fields_templates.sql` and click **Run**. Until you do, the app still works, but adding custom fields or saving templates asks you to run this file. (`setup.sql` already includes it.)
 
+### 1b-3. Existing Supabase project: add automations, status updates, time tracking and files
+
+In **SQL Editor → New query**, paste the contents of
+`supabase/migrations/20261031120000_automations_status_time_files.sql` and click **Run**. It creates four tables and a private `attachments` storage bucket (25 MB per file; the Supabase free tier gives 1 GB of file storage in total). Until you run it, the Timeline view works, but the new features ask you to run this file. (`setup.sql` already includes it.)
+
 ### 1c. New or empty Supabase project: create the tables
 
 Do this if the tables are missing, or if the app says **"Could not find the table 'public.profiles' in the schema cache"**.

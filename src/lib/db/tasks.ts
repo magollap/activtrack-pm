@@ -1,4 +1,5 @@
 import { table } from '@/lib/db/tables';
+import { runAutomations } from '@/lib/db/automations';
 import { parseDay } from '@/lib/dates';
 import { PRIORITIES, type FieldValue, type Priority, type Status, type Task } from '@/lib/db/types';
 
@@ -59,7 +60,7 @@ export async function createTask(projectId: string, input: TaskInput): Promise<T
   const status = await requireStatus(projectId, input.statusId);
   const priority = input.priority ?? 'medium';
   if (!PRIORITIES.includes(priority)) throw new Error('Unknown priority.');
-  return table('tasks').insert({
+  const created = await table('tasks').insert({
     projectId,
     title: cleanTitle(input.title),
     description: (input.description ?? '').slice(0, 10000),
@@ -73,6 +74,8 @@ export async function createTask(projectId: string, input: TaskInput): Promise<T
     // Only sent when used, so databases without the custom fields column keep working.
     ...(input.customValues && Object.keys(input.customValues).length ? { customValues: cleanValues(input.customValues) } : {}),
   });
+  await runAutomations(null, created);
+  return created;
 }
 
 /** Change history is written by the server, so it cannot be forged or skipped. */
@@ -97,7 +100,9 @@ export async function updateTask(id: string, patch: TaskPatch): Promise<Task> {
     next.order = await nextOrder(status.id);
     next.completedAt = status.isDone ? task.completedAt ?? nowIso() : null;
   }
-  return table('tasks').update(id, next);
+  const updated = await table('tasks').update(id, next);
+  if (next.statusId !== undefined || next.priority !== undefined) await runAutomations(task, updated);
+  return updated;
 }
 
 export async function moveTask(id: string, statusId: string, orderedIds: string[]): Promise<void> {

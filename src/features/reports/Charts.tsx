@@ -70,13 +70,13 @@ export function Donut({ slices, centerLabel }: { slices: Slice[]; centerLabel: s
 }
 
 /** Horizontal bars with the value at the end, for "by person" and "by project". */
-export function BarList({ slices, colorBy = 'entity' }: { slices: Slice[]; colorBy?: 'entity' | 'brand' }) {
+export function BarList({ slices, colorBy = 'entity', format = String }: { slices: Slice[]; colorBy?: 'entity' | 'brand'; format?: (value: number) => string }) {
   if (!slices.length) return <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">No open cards</p>;
   const max = Math.max(...slices.map((s) => s.value));
   return (
     <ul className="space-y-2.5">
       {slices.slice(0, 10).map((s) => (
-        <li key={s.key} className="grid grid-cols-[minmax(0,8rem)_1fr_2rem] items-center gap-3 text-sm" title={`${s.label}: ${s.value}`}>
+        <li key={s.key} className="grid grid-cols-[minmax(0,8rem)_1fr_auto] items-center gap-3 text-sm" title={`${s.label}: ${s.value}`}>
           <span className="truncate text-slate-700 dark:text-slate-300">{s.label}</span>
           <span className="h-3 overflow-hidden rounded-r bg-slate-100 dark:bg-slate-800">
             <span
@@ -84,7 +84,7 @@ export function BarList({ slices, colorBy = 'entity' }: { slices: Slice[]; color
               style={{ width: `${(s.value / max) * 100}%`, backgroundColor: colorBy === 'entity' ? s.color : undefined }}
             />
           </span>
-          <span className="text-right font-medium tabular-nums">{s.value}</span>
+          <span className="whitespace-nowrap text-right font-medium tabular-nums">{format(s.value)}</span>
         </li>
       ))}
     </ul>

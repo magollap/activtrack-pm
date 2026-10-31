@@ -132,6 +132,7 @@ export function TaskPanel({ taskId, statuses, members, fields, access, onClose }
                   members={members}
                   fields={fields}
                   editable={editable}
+                  manage={canManage(access)}
                   onManageFields={canManage(access) ? () => setManagingFields(true) : undefined}
                 />
               )}

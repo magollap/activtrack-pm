@@ -1,10 +1,11 @@
-import { CalendarDays, Columns3, List } from 'lucide-react';
+import { CalendarDays, Columns3, GanttChart, List } from 'lucide-react';
 import type { ProjectView } from '@/lib/prefs';
 
 const VIEWS: { id: ProjectView; label: string; icon: typeof List }[] = [
   { id: 'board', label: 'Board', icon: Columns3 },
   { id: 'list', label: 'List', icon: List },
   { id: 'calendar', label: 'Calendar', icon: CalendarDays },
+  { id: 'timeline', label: 'Timeline', icon: GanttChart },
 ];
 
 export function ViewSwitcher({ view, onChange }: { view: ProjectView; onChange: (view: ProjectView) => void }) {

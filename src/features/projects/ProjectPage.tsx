@@ -11,6 +11,7 @@ import { FilterToolbar } from '@/features/filters/FilterToolbar';
 import { BoardView } from '@/features/board/BoardView';
 import { ListView } from '@/features/list/ListView';
 import { CalendarView } from '@/features/calendar/CalendarView';
+import { TimelineView } from '@/features/timeline/TimelineView';
 import { useProjectData } from '@/hooks/useProjectData';
 import { useCurrentUser } from '@/features/auth/AuthProvider';
 import { canWrite, isGovernor } from '@/lib/db/access';
@@ -54,7 +55,7 @@ export function ProjectPage() {
       const key = e.key.toLowerCase();
       if (key === 'n') {
         e.preventDefault();
-        if (view === 'calendar') changeView('board');
+        if (view === 'calendar' || view === 'timeline') changeView('board');
         setTimeout(() => runCommand('quick-add'), 0);
       } else if (views[key]) {
         changeView(views[key]);
@@ -79,20 +80,20 @@ export function ProjectPage() {
 
   const { project, statuses, tasks, members, checklist, access, fields } = data;
   const editable = canWrite(access);
-  const viewProps = { projectId, statuses, tasks: visibleTasks, members, checklist, fields, editable, onOpenTask: openTask };
+  const viewProps = { projectId, statuses, tasks: visibleTasks, members, checklist, fields, timeByTask: data.timeByTask, attachmentsByTask: data.attachmentsByTask, editable, onOpenTask: openTask };
   const firstOpenStatus = statuses.find((s) => !s.isDone) ?? statuses[0];
   const filtered = countActiveFilters(filters) > 0;
 
   return (
     <div className="flex min-h-full flex-col">
       <div className="space-y-4 px-4 pb-4 pt-6 sm:px-6">
-        <ProjectHeader project={project} statuses={statuses} fields={fields} taskCount={tasks.length} access={access} isGovernor={isGovernor(me)} />
+        <ProjectHeader project={project} statuses={statuses} fields={fields} members={members} tasks={tasks} latestUpdate={data.latestUpdate} taskCount={tasks.length} access={access} isGovernor={isGovernor(me)} />
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <ViewSwitcher view={view} onChange={changeView} />
           <FilterToolbar filters={filters} onChange={setFilters} statuses={statuses} members={members} />
         </div>
         <ProjectProgress statuses={statuses} tasks={tasks} />
-        {editable && !project.archivedAt && view !== 'calendar' && firstOpenStatus && (
+        {editable && !project.archivedAt && view !== 'calendar' && view !== 'timeline' && firstOpenStatus && (
           <div className="flex gap-2">
             <div className="min-w-0 flex-1">
               <QuickAdd projectId={projectId} statusId={firstOpenStatus.id} listenForShortcut placeholder={`Add a card to ${firstOpenStatus.name}, press Enter (N)`} />
@@ -118,7 +119,7 @@ export function ProjectPage() {
               ? 'Type a task title in the box above and press Enter. You can keep adding tasks one after another.'
               : 'Nobody has added tasks to this project yet.'}
           />
-        ) : filtered && visibleTasks.length === 0 && view !== 'calendar' ? (
+        ) : filtered && visibleTasks.length === 0 && view !== 'calendar' && view !== 'timeline' ? (
           <EmptyState
             icon={SearchX}
             title="No tasks match your filters"
@@ -129,6 +130,8 @@ export function ProjectPage() {
           <BoardView {...viewProps} />
         ) : view === 'list' ? (
           <ListView {...viewProps} />
+        ) : view === 'timeline' ? (
+          <TimelineView {...viewProps} />
         ) : (
           <CalendarView {...viewProps} />
         )}

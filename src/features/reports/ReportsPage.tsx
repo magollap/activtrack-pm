@@ -11,6 +11,7 @@ import { buildReport, loadReportSource, periodRange, reportToCsv, shiftAnchor, t
 import { useQuery } from '@/hooks/useQuery';
 import { useToast } from '@/hooks/useToast';
 import { downloadFile } from '@/lib/download';
+import { formatMinutes } from '@/lib/db/time';
 
 const PERIODS: { id: Period; label: string }[] = [
   { id: 'daily', label: 'Daily' },
@@ -181,6 +182,12 @@ export function ReportsPage() {
         <Panel title="Open work by person" subtitle="Who is carrying the open cards">
           <BarList slices={report.byAssignee} colorBy="brand" />
         </Panel>
+        <Panel title={`Time logged this ${periodNoun}`} subtitle={report.minutesLogged ? `${formatMinutes(report.minutesLogged)} in total` : 'From timers and manual logs on cards'}>
+          {report.timeByPerson.length ? <BarList slices={report.timeByPerson} colorBy="brand" format={formatMinutes} /> : <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">No time logged this {periodNoun}.</p>}
+        </Panel>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2 print:grid-cols-2">
         <Panel title={`Overdue ${isCurrent ? 'now' : `at end of ${periodNoun}`}`} subtitle="Open cards past their due date">
           <RowList rows={report.overdueRows} empty="Nothing overdue. Nice." />
         </Panel>

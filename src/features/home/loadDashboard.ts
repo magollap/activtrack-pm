@@ -3,8 +3,9 @@ import { listProjects } from '@/lib/db/projects';
 import { listStatuses } from '@/lib/db/statuses';
 import { listTasks } from '@/lib/db/tasks';
 import { listMembers } from '@/lib/db/members';
+import { listStatusUpdates } from '@/lib/db/statusUpdates';
 import { dueTone } from '@/lib/dates';
-import type { Member, Project, Status, Task } from '@/lib/db/types';
+import type { Member, Project, Status, StatusUpdate, Task } from '@/lib/db/types';
 
 export interface AttentionItem {
   task: Task;
@@ -28,10 +29,11 @@ export interface ProjectSummary {
   total: number;
   done: number;
   overdue: number;
+  latestUpdate: StatusUpdate | null;
 }
 
 export async function loadDashboard(): Promise<DashboardData> {
-  const [projects, statuses, allTasks, members] = await Promise.all([listProjects(), listStatuses(), listTasks(), listMembers()]);
+  const [projects, statuses, allTasks, members, updates] = await Promise.all([listProjects(), listStatuses(), listTasks(), listMembers(), listStatusUpdates()]);
   const activeProjects = new Map(projects.filter((p) => !p.archivedAt).map((p) => [p.id, p]));
   const statusMap = new Map(statuses.map((s) => [s.id, s]));
   const tasks = allTasks.filter((t) => activeProjects.has(t.projectId));
@@ -62,7 +64,7 @@ export async function loadDashboard(): Promise<DashboardData> {
       const own = tasks.filter((t) => t.projectId === project.id);
       const done = own.filter((t) => statusMap.get(t.statusId)?.isDone).length;
       const overdue = attention.filter((a) => a.project.id === project.id && a.tone === 'overdue').length;
-      return { project, total: own.length, done, overdue };
+      return { project, total: own.length, done, overdue, latestUpdate: updates.find((u) => u.projectId === project.id) ?? null };
     })
     .filter((p) => p.total > 0)
     .sort((a, b) => b.total - b.done - (a.total - a.done));

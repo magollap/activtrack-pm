@@ -13,6 +13,10 @@ const TABLES: Record<CollectionName, string> = {
   taskHistory: 'task_history',
   customFields: 'custom_fields',
   projectTemplates: 'project_templates',
+  automations: 'automations',
+  statusUpdates: 'status_updates',
+  timeEntries: 'time_entries',
+  attachments: 'attachments',
 };
 
 const FROM_TABLE: Record<string, CollectionName> = Object.fromEntries(
@@ -190,6 +194,25 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
 
     async testLdap() {
       throw new Error(LOCAL_ONLY);
+    },
+
+    async uploadFile(path, file) {
+      const { error } = await supabase.storage.from('attachments').upload(path, file, { contentType: file.type || 'application/octet-stream', upsert: false });
+      if (error) {
+        if (/bucket not found/i.test(error.message)) throw new Error('File attachments need a one-time database update. Run supabase/migrations/20261031120000_automations_status_time_files.sql in the Supabase SQL Editor.');
+        if (/exceeded|too large|payload/i.test(error.message)) throw new Error('This file is too large. The limit is 25 MB.');
+        throw new Error(error.message || 'The file could not be uploaded.');
+      }
+    },
+
+    async fileUrl(path, downloadName) {
+      const { data, error } = await supabase.storage.from('attachments').createSignedUrl(path, 300, downloadName ? { download: downloadName } : undefined);
+      if (error || !data) throw new Error('This file could not be opened. It may have been deleted.');
+      return data.signedUrl;
+    },
+
+    async deleteFile(path) {
+      await supabase.storage.from('attachments').remove([path]);
     },
 
     async apiHeaders() {

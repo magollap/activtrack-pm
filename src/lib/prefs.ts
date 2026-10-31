@@ -3,7 +3,7 @@ import { PRIORITIES, type Priority } from '@/lib/db/types';
 const PREFS_PREFIX = 'workday:prefs:';
 
 export type Theme = 'light' | 'dark';
-export type ProjectView = 'board' | 'list' | 'calendar';
+export type ProjectView = 'board' | 'list' | 'calendar' | 'timeline';
 export type DueFilter = 'any' | 'overdue' | 'today' | 'week' | 'none';
 
 export interface TaskFilters {
@@ -57,7 +57,7 @@ export function setTheme(theme: Theme | null): void {
 
 export function getProjectView(projectId: string): ProjectView {
   const value = read(`view:${projectId}`);
-  return value === 'list' || value === 'calendar' ? value : 'board';
+  return value === 'list' || value === 'calendar' || value === 'timeline' ? value : 'board';
 }
 
 export const setProjectView = (projectId: string, view: ProjectView): void => write(`view:${projectId}`, view);

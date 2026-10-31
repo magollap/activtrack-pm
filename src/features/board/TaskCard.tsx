@@ -1,4 +1,5 @@
-import { CheckCircle2, ListChecks } from 'lucide-react';
+import { CheckCircle2, Clock, ListChecks, Paperclip } from 'lucide-react';
+import { formatMinutes } from '@/lib/db/time';
 import { Avatar } from '@/components/Avatar';
 import { DueDate } from '@/components/DueDate';
 import { PriorityBadge } from '@/components/PriorityBadge';
@@ -12,12 +13,14 @@ interface TaskCardProps {
   checklist: ChecklistCount | undefined;
   isDone: boolean;
   fields?: CustomField[];
+  minutes?: number;
+  files?: number;
   dragging?: boolean;
   overlay?: boolean;
   onOpen?: () => void;
 }
 
-export function TaskCard({ task, assignee, checklist, isDone, fields = [], dragging, overlay, onOpen }: TaskCardProps) {
+export function TaskCard({ task, assignee, checklist, isDone, fields = [], minutes = 0, files = 0, dragging, overlay, onOpen }: TaskCardProps) {
   return (
     <div
       onClick={onOpen}
@@ -45,6 +48,8 @@ export function TaskCard({ task, assignee, checklist, isDone, fields = [], dragg
             <ListChecks className="h-3.5 w-3.5" /> {checklist.done}/{checklist.total}
           </span>
         )}
+        {files > 0 && <span className="inline-flex items-center gap-0.5 text-xs text-slate-500 dark:text-slate-400" title={`${files} file${files === 1 ? '' : 's'}`}><Paperclip className="h-3.5 w-3.5" />{files}</span>}
+        {minutes > 0 && <span className="inline-flex items-center gap-0.5 text-xs tabular-nums text-slate-500 dark:text-slate-400" title="Time logged"><Clock className="h-3.5 w-3.5" />{formatMinutes(minutes)}</span>}
         <span className="ml-auto">
           {(assignee || task.assigneeId) && <Avatar member={assignee} size="xs" />}
         </span>

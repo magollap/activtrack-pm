@@ -71,6 +71,12 @@ export interface Backend {
   saveAuthSettings(settings: AuthSettings): Promise<void>;
   testLdap(settings: AuthSettings, username: string, password: string): Promise<LdapTestResult>;
 
+  /** Stores a file at "<project id>/<task id>/<name>" for an attachment. */
+  uploadFile(path: string, file: File): Promise<void>;
+  /** A short-lived address to open or download a stored file. */
+  fileUrl(path: string, downloadName?: string): Promise<string>;
+  deleteFile(path: string): Promise<void>;
+
   /** Headers that prove who is calling our own /api endpoints (the AI assistant). */
   apiHeaders(): Promise<Record<string, string>>;
   /** Live updates: calls back with the collection whenever someone else changes data. Returns a stop function. */
