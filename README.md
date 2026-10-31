@@ -11,6 +11,8 @@ ActivTrack is a project and task management app with AI skills. It has board, li
 - **My tasks**: everything assigned to you across projects, grouped by due date, with one-click complete.
 - **Project progress** bars, card **duplicate** and **copy link**, and **keyboard shortcuts** (press `?`).
 - **Custom fields**: add your own card fields per project (text, number, date, dropdown, checkbox, link), shown as chips on cards and included in CSV export. Project menu → **Custom fields**.
+- **Reports** (sidebar → Reports): daily, weekly and monthly reports for all projects or one, with created vs completed trend, open and overdue counts, completion rate, cycle time, and breakdowns by status, priority, person, project and custom dropdown fields. Download as CSV or print / save as PDF.
+- **Landing page** at `/` for signed-out visitors, with an animated WebGL aurora hero (green, blue and gold in light mode; gold on black in dark mode). Sign in lives at `/login`, sign up at `/signup`.
 - **Project templates**: start new projects from built-in templates (software sprint, bug tracking, marketing campaign, product launch, event planning) or save any project as your own template, with or without its cards.
 
 Where data lives depends on how you run it:

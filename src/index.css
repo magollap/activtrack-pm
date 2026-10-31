@@ -130,6 +130,11 @@
   html {
     -webkit-tap-highlight-color: transparent;
   }
+  @media print {
+    @page { margin: 12mm; }
+    html, body { background: #fff !important; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
   body {
     @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
     line-height: 1.5;

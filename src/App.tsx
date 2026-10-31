@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
 import { UpdateBanner } from '@/components/layout/UpdateBanner';
@@ -30,14 +31,33 @@ export default function App() {
     );
   }
   if (state.status === 'signedOut') {
+    return <SignedOut notice={state.notice} />;
+  }
+  return <Workspace />;
+}
+
+// The landing page (and its WebGL library) only loads for signed-out visitors.
+const LandingPage = lazy(() => import('@/features/landing/LandingPage').then((m) => ({ default: m.LandingPage })));
+
+/** "/" shows the landing page; /signup opens account creation; any other address asks the visitor to sign in. */
+function SignedOut({ notice }: { notice: string | null }) {
+  const { pathname } = useLocation();
+  if (pathname === '/' && !notice) {
     return (
       <>
         <UpdateBanner />
-        <AuthPage notice={state.notice} />
+        <Suspense fallback={<div className="h-[100dvh] bg-[#06261a] dark:bg-black" />}>
+          <LandingPage />
+        </Suspense>
       </>
     );
   }
-  return <Workspace />;
+  return (
+    <>
+      <UpdateBanner />
+      <AuthPage notice={notice} initialMode={pathname === '/signup' ? 'signUp' : 'signIn'} />
+    </>
+  );
 }
 
 /** Keeps every open screen in step with changes teammates make (Supabase Realtime, or polling on installs). */
@@ -50,13 +70,13 @@ function Workspace() {
   useLiveSync();
 
   return (
-    <div className="flex h-[100dvh] flex-col overflow-hidden">
+    <div className="flex h-[100dvh] flex-col overflow-hidden print:block print:h-auto print:overflow-visible">
       <UpdateBanner />
       <div className="flex min-h-0 flex-1">
         <Sidebar mobileOpen={menuOpen} onClose={() => setMenuOpen(false)} />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar onOpenMenu={() => setMenuOpen(true)} />
-          <main className="min-h-0 flex-1 overflow-y-auto">
+          <main className="min-h-0 flex-1 overflow-y-auto print:overflow-visible">
             <AppRoutes />
           </main>
         </div>

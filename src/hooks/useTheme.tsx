@@ -47,6 +47,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', META_COLORS[theme]);
   }, [theme]);
 
+  // Printed reports always use the light theme: dark surfaces waste ink and can lose text on paper.
+  useEffect(() => {
+    const before = () => document.documentElement.classList.remove('dark');
+    const after = () => document.documentElement.classList.toggle('dark', theme === 'dark');
+    window.addEventListener('beforeprint', before);
+    window.addEventListener('afterprint', after);
+    return () => {
+      window.removeEventListener('beforeprint', before);
+      window.removeEventListener('afterprint', after);
+    };
+  }, [theme]);
+
   const setPreference = useCallback((next: ThemePreference) => {
     setPreferenceState(next);
     saveTheme(next === 'system' ? null : next);

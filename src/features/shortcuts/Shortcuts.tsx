@@ -12,6 +12,7 @@ const GROUPS: { title: string; items: [string[], string][] }[] = [
       [['/'], 'Search tasks and projects'],
       [['G', 'H'], 'Go to Home'],
       [['G', 'M'], 'Go to My tasks'],
+      [['G', 'R'], 'Go to Reports'],
       [['T'], 'Switch light / dark theme'],
       [['?'], 'Show these shortcuts'],
     ],
@@ -45,6 +46,7 @@ export function Shortcuts() {
         pendingG = 0;
         if (key === 'h') navigate('/');
         if (key === 'm') navigate('/my-tasks');
+        if (key === 'r') navigate('/reports');
         return;
       }
       if (key === 'g') pendingG = Date.now();
