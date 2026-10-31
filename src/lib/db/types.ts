@@ -89,6 +89,8 @@ export interface CustomField extends BaseRecord {
   options: FieldOption[];
   order: number;
   showOnCard: boolean;
+  /** Only project leads and governors may set or change this field's values. */
+  locked: boolean;
 }
 
 export interface TemplateField {
@@ -96,6 +98,7 @@ export interface TemplateField {
   type: FieldType;
   options: FieldOption[];
   showOnCard: boolean;
+  locked?: boolean;
 }
 
 export interface TemplateTask {

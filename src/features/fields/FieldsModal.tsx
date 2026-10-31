@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowDown, ArrowUp, Calendar, CheckSquare, ChevronDown, Eye, EyeOff, Hash, Link2, Pencil, Plus, Trash2, Type, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Calendar, CheckSquare, ChevronDown, Eye, EyeOff, Hash, Link2, Lock, LockOpen, Pencil, Plus, Trash2, Type, X } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useToast } from '@/hooks/useToast';
@@ -26,7 +26,7 @@ const FIELD_ICONS: Record<FieldType, typeof Type> = {
   url: Link2,
 };
 
-const EMPTY: FieldInput = { name: '', type: 'text', options: [], showOnCard: true };
+const EMPTY: FieldInput = { name: '', type: 'text', options: [], showOnCard: true, locked: false };
 
 interface FieldsModalProps {
   projectId: string;
@@ -59,7 +59,7 @@ export function FieldsModal({ projectId, fields, onClose }: FieldsModalProps) {
     <Modal title="Custom fields" onClose={onClose} size="lg" footer={<HelpLink section="fields" />}>
       <div className="space-y-4">
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Add your own fields to every card in this project, like story points, severity or a client name. Fields marked with the eye appear on the card in the board and list.
+          Add your own fields to every card in this project, like story points, severity or a client name. Fields marked with the eye appear on the card in the board and list. Locked fields (padlock) can only be changed by project leads; everyone else sees them greyed out.
         </p>
 
         {fields.length > 0 && (
@@ -74,6 +74,7 @@ export function FieldsModal({ projectId, fields, onClose }: FieldsModalProps) {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{field.name}</p>
                     <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                      {field.locked && <span className="font-semibold text-gold-700 dark:text-gold-400">Project leads only · </span>}
                       {FIELD_TYPE_META[field.type].label}
                       {field.type === 'select' && ` · ${field.options.map((o) => o.label).join(', ')}`}
                     </p>
@@ -82,11 +83,19 @@ export function FieldsModal({ projectId, fields, onClose }: FieldsModalProps) {
                   <button className="icon-btn h-8 w-8" disabled={index === fields.length - 1} onClick={() => move(index, 1)} aria-label={`Move ${field.name} down`}><ArrowDown className="h-4 w-4" /></button>
                   <button
                     className={`icon-btn h-8 w-8 ${field.showOnCard ? 'text-brand-600 dark:text-brand-400' : ''}`}
-                    onClick={() => run(() => updateField(field.id, { ...field, showOnCard: !field.showOnCard }))}
+                    onClick={() => run(() => updateField(field.id, { ...field, showOnCard: !field.showOnCard }, field))}
                     aria-label={field.showOnCard ? `Hide ${field.name} on cards` : `Show ${field.name} on cards`}
                     title={field.showOnCard ? 'Shown on cards' : 'Hidden on cards'}
                   >
                     {field.showOnCard ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </button>
+                  <button
+                    className={`icon-btn h-8 w-8 ${field.locked ? 'text-gold-600 dark:text-gold-400' : ''}`}
+                    onClick={() => run(() => updateField(field.id, { ...field, locked: !field.locked }, field))}
+                    aria-label={field.locked ? `Unlock ${field.name} so everyone can change it` : `Lock ${field.name} to project leads`}
+                    title={field.locked ? 'Locked: only project leads can change values' : 'Anyone who can edit cards can change values'}
+                  >
+                    {field.locked ? <Lock className="h-4 w-4" /> : <LockOpen className="h-4 w-4" />}
                   </button>
                   <button className="icon-btn h-8 w-8" onClick={() => setEditing(field)} aria-label={`Edit ${field.name}`}><Pencil className="h-4 w-4" /></button>
                   <button className="icon-btn h-8 w-8 hover:text-red-600" onClick={() => setDeleting(field)} aria-label={`Delete ${field.name}`}><Trash2 className="h-4 w-4" /></button>
@@ -107,7 +116,7 @@ export function FieldsModal({ projectId, fields, onClose }: FieldsModalProps) {
                 await createField(projectId, input);
                 toast.success(`Added "${input.name.trim()}"`);
               } else {
-                await updateField(editing.id, input);
+                await updateField(editing.id, input, editing);
                 toast.success('Field updated');
               }
               setEditing(null);
@@ -214,6 +223,14 @@ function FieldForm({ initial, isNew, onSave, onCancel }: { initial: FieldInput; 
         <input type="checkbox" checked={draft.showOnCard} onChange={(e) => set({ showOnCard: e.target.checked })} className="h-4 w-4 accent-brand-600" />
         Show on cards in the board and list
       </label>
+
+      <div>
+        <label className="label" htmlFor="field-locked">Who can change values</label>
+        <select id="field-locked" className="input" value={draft.locked ? 'leads' : 'all'} onChange={(e) => set({ locked: e.target.value === 'leads' })}>
+          <option value="all">Everyone who can edit cards</option>
+          <option value="leads">Project leads only (others see it greyed out)</option>
+        </select>
+      </div>
 
       <div className="flex justify-end gap-2">
         <button type="button" className="btn-ghost" onClick={onCancel}>Cancel</button>

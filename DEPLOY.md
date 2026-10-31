@@ -41,6 +41,13 @@ In **SQL Editor → New query**, paste the contents of
 In **SQL Editor → New query**, paste the contents of
 `supabase/migrations/20261031120000_automations_status_time_files.sql` and click **Run**. It creates four tables and a private `attachments` storage bucket (25 MB per file; the Supabase free tier gives 1 GB of file storage in total). Until you run it, the Timeline view works, but the new features ask you to run this file. (`setup.sql` already includes it.)
 
+### 1b-4. Existing Supabase project: locked fields ("Project leads only")
+
+In **SQL Editor → New query**, paste the contents of
+`supabase/migrations/20261031160000_locked_fields.sql` and click **Run**. It lets project leads lock fields such as Epic or Type so only leads and governors can change them; the database enforces it. (`setup.sql` already includes it.)
+
+If you loaded the Pet Care demo before Oct 31, 2026, also run `supabase/seed/demo_pet_care_planning_fields.sql`. It adds a **Feature** field to the Demo Project and locks Epic, Feature and Type.
+
 ### 1c. New or empty Supabase project: create the tables
 
 Do this if the tables are missing, or if the app says **"Could not find the table 'public.profiles' in the schema cache"**.

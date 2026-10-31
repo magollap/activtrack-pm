@@ -86,6 +86,15 @@ export function createContext(store, me) {
   }
 
   const statusInProject = (row) => db.statuses.some((s) => s.id === row.statusId && s.projectId === row.projectId);
+  // Locked custom fields: only project leads and governors may set or change their values.
+  const lockedFieldsUnchanged = (projectId, before, after) => {
+    if (MANAGERS.includes(access(projectId))) return true;
+    const changed = db.customFields.find(
+      (f) => f.projectId === projectId && f.locked && JSON.stringify(before?.[f.id] ?? null) !== JSON.stringify(after?.[f.id] ?? null),
+    );
+    if (changed) throw new HttpError(403, `"${changed.name}" is locked. Only project leads can change it.`);
+    return true;
+  };
   const profileExists = (userId) => userId === null || db.profiles.some((p) => p.id === userId);
 
   const RULES = {
@@ -149,12 +158,14 @@ export function createContext(store, me) {
       insert: {
         columns: ['projectId', 'title', 'description', 'statusId', 'priority', 'assigneeId', 'startDate', 'dueDate', 'order', 'completedAt', 'customValues'],
         defaults: () => ({ description: '', priority: 'medium', assigneeId: null, startDate: null, dueDate: null, order: 0, completedAt: null, customValues: {}, createdBy: me.id }),
-        allow: (row) => WRITERS.includes(access(row.projectId)) && statusInProject(row) && profileExists(row.assigneeId),
+        allow: (row) =>
+          WRITERS.includes(access(row.projectId)) && statusInProject(row) && profileExists(row.assigneeId) && lockedFieldsUnchanged(row.projectId, {}, row.customValues),
       },
       update: {
         columns: ['title', 'description', 'statusId', 'priority', 'assigneeId', 'startDate', 'dueDate', 'order', 'completedAt', 'customValues'],
         allow: (row, next) =>
-          WRITERS.includes(access(row.projectId)) && statusInProject(next) && profileExists(next.assigneeId),
+          WRITERS.includes(access(row.projectId)) && statusInProject(next) && profileExists(next.assigneeId) &&
+          lockedFieldsUnchanged(row.projectId, row.customValues, next.customValues),
       },
       remove: (row) => {
         const level = access(row.projectId);
@@ -189,14 +200,14 @@ export function createContext(store, me) {
       select: (row) => taskAccess(row.taskId) !== null,
     },
     customFields: {
-      fields: { projectId: id, name: str(40, 1), type: oneOf(...FIELD_TYPES), options: fieldOptions, order: int, showOnCard: bool },
+      fields: { projectId: id, name: str(40, 1), type: oneOf(...FIELD_TYPES), options: fieldOptions, order: int, showOnCard: bool, locked: bool },
       select: (row) => access(row.projectId) !== null,
       insert: {
-        columns: ['projectId', 'name', 'type', 'options', 'order', 'showOnCard'],
-        defaults: () => ({ options: [], order: 0, showOnCard: true }),
+        columns: ['projectId', 'name', 'type', 'options', 'order', 'showOnCard', 'locked'],
+        defaults: () => ({ options: [], order: 0, showOnCard: true, locked: false }),
         allow: (row) => MANAGERS.includes(access(row.projectId)),
       },
-      update: { columns: ['name', 'options', 'order', 'showOnCard'], allow: (row) => MANAGERS.includes(access(row.projectId)) },
+      update: { columns: ['name', 'options', 'order', 'showOnCard', 'locked'], allow: (row) => MANAGERS.includes(access(row.projectId)) },
       remove: (row) => MANAGERS.includes(access(row.projectId)),
     },
     automations: {

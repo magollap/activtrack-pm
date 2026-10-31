@@ -111,7 +111,7 @@ export function TaskDetailsTab({ task, statuses, members, fields, editable, mana
         {datesInverted && <p className="text-xs text-amber-600 dark:text-amber-400 sm:col-span-2">The start date is after the due date.</p>}
       </div>
 
-      <TaskFieldsSection task={task} fields={fields} editable={editable} onManage={onManageFields} />
+      <TaskFieldsSection task={task} fields={fields} editable={editable} manage={manage} onManage={onManageFields} />
 
       <div>
         <label className="label" htmlFor="task-description">Description</label>

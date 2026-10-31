@@ -40,7 +40,7 @@ npm start       # run the ActivTrack server (app + data + sign-in) on http://loc
 
 See **[DEPLOY.md](DEPLOY.md)** for the full step-by-step guide. In short:
 
-1. In Supabase, run `supabase/migrations/20261030120000_enable_realtime.sql`, `20261030160000_custom_fields_templates.sql` and `20261031120000_automations_status_time_files.sql` in the SQL Editor (or `setup.sql` on a fresh project), and copy the Project URL and anon key.
+1. In Supabase, run `supabase/migrations/20261030120000_enable_realtime.sql`, `20261030160000_custom_fields_templates.sql` and `20261031120000_automations_status_time_files.sql` and `20261031160000_locked_fields.sql` in the SQL Editor (or `setup.sql` on a fresh project), and copy the Project URL and anon key.
 2. In Vercel, import the GitHub repository and add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` and, optionally, `GEMINI_API_KEY`.
 3. Deploy, then set your Vercel address as the **Site URL** in Supabase → Authentication → URL Configuration.
 

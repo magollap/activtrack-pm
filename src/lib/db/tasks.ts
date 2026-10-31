@@ -1,5 +1,6 @@
 import { table } from '@/lib/db/tables';
 import { runAutomations } from '@/lib/db/automations';
+import { listFields, withoutLockedValues } from '@/lib/db/fields';
 import { parseDay } from '@/lib/dates';
 import { PRIORITIES, type FieldValue, type Priority, type Status, type Task } from '@/lib/db/types';
 
@@ -122,10 +123,14 @@ export async function moveTask(id: string, statusId: string, orderedIds: string[
   );
 }
 
-/** Copies a card (and its checklist, unticked) into the same column, right after the original's column order. */
-export async function duplicateTask(id: string): Promise<Task> {
+/**
+ * Copies a card (and its checklist, unticked) into the same column, right after the original's column order.
+ * People who can't set locked fields (see fields.ts) get the copy without those values.
+ */
+export async function duplicateTask(id: string, canSetLockedFields = true): Promise<Task> {
   const task = await getTask(id);
   if (!task) throw new Error('This task no longer exists.');
+  const customValues = canSetLockedFields ? task.customValues : withoutLockedValues(task.customValues, await listFields(task.projectId));
   const copy = await createTask(task.projectId, {
     title: `${task.title.slice(0, 193)} (copy)`,
     statusId: task.statusId,
@@ -134,7 +139,7 @@ export async function duplicateTask(id: string): Promise<Task> {
     assigneeId: task.assigneeId,
     startDate: task.startDate,
     dueDate: task.dueDate,
-    customValues: task.customValues,
+    customValues,
   });
   const items = (await table('checklistItems').list({ taskId: id })).sort((a, b) => a.order - b.order);
   await table('checklistItems').insertMany(items.map((item) => ({ taskId: copy.id, text: item.text, done: false, order: item.order })));

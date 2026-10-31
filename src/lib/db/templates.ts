@@ -47,7 +47,7 @@ export const BUILTIN_TEMPLATES: TemplateChoice[] = [
       ],
       fields: [
         { name: 'Story points', type: 'number', options: [], showOnCard: true },
-        { name: 'Type', type: 'select', showOnCard: true, options: [opt('feature', 'Feature', '#2550e8'), opt('bug', 'Bug', '#e11d48'), opt('chore', 'Chore', '#64748b'), opt('spike', 'Spike', '#c9a227')] },
+        { name: 'Type', type: 'select', showOnCard: true, locked: true, options: [opt('feature', 'Feature', '#2550e8'), opt('bug', 'Bug', '#e11d48'), opt('chore', 'Chore', '#64748b'), opt('spike', 'Spike', '#c9a227')] },
         { name: 'Pull request', type: 'url', options: [], showOnCard: false },
       ],
       tasks: [
@@ -185,6 +185,7 @@ export function cleanTemplateData(raw: unknown): TemplateData {
       name: str(f.name, 40).trim(),
       type: f.type,
       showOnCard: f.showOnCard !== false,
+      locked: f.locked === true,
       options: (Array.isArray(f.options) ? f.options : [])
         .slice(0, 50)
         .filter((o) => o && str(o.id, 64) && str(o.label, 60).trim())
@@ -303,7 +304,7 @@ export async function saveProjectAsTemplate(projectId: string, input: { name: st
 
   const data: TemplateData = {
     statuses: statuses.map((s) => ({ name: s.name, color: s.color, isDone: s.isDone })),
-    fields: fields.map((f) => ({ name: f.name, type: f.type, options: f.options, showOnCard: f.showOnCard })),
+    fields: fields.map((f) => ({ name: f.name, type: f.type, options: f.options, showOnCard: f.showOnCard, locked: f.locked })),
     tasks,
   };
   if (JSON.stringify(data).length > 190000) throw new Error('This project is too big to save as a template. Try without cards.');
