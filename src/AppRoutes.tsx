@@ -6,6 +6,7 @@ import { MyTasksPage } from '@/features/my-tasks/MyTasksPage';
 import { ReportsPage } from '@/features/reports/ReportsPage';
 import { ProjectPage } from '@/features/projects/ProjectPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { HelpPage } from '@/features/help/HelpPage';
 
 export function AppRoutes() {
   return (
@@ -17,6 +18,7 @@ export function AppRoutes() {
       <Route path="/reports" element={<ReportsPage />} />
       <Route path="/projects/:projectId" element={<ProjectPage />} />
       <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/help" element={<HelpPage />} />
       <Route
         path="*"
         element={

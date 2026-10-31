@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Archive, BarChart3, ChevronRight, Home, Keyboard, ListTodo, Lock, Plus, Settings, Sparkles, X } from 'lucide-react';
+import { Archive, BarChart3, ChevronRight, CircleHelp, Home, Keyboard, ListTodo, Lock, Plus, Settings, Sparkles, X } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { MOD_KEY, openAssistant, openShortcuts } from '@/lib/commands';
 import { ProjectFormModal } from '@/features/projects/ProjectFormModal';
@@ -133,6 +133,9 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
         </nav>
 
         <div className="space-y-0.5 border-t border-sidebar-border p-3">
+          <NavLink to="/help" className={linkClass} onClick={onClose}>
+            <CircleHelp className="h-4 w-4" /> Help
+          </NavLink>
           <button type="button" className={`${linkClass({ isActive: false })} hidden w-full md:flex`} onClick={openShortcuts}>
             <Keyboard className="h-4 w-4" /> Shortcuts
             <kbd className="ml-auto rounded border border-sidebar-border px-1.5 text-[10px] font-medium text-sidebar-muted">?</kbd>

@@ -9,6 +9,7 @@ import { createStatus, reorderStatuses } from '@/lib/db/statuses';
 import { pickColor } from '@/lib/colors';
 import { useToast } from '@/hooks/useToast';
 import type { Status } from '@/lib/db/types';
+import { HelpLink } from '@/features/help/HelpLink';
 
 interface WorkflowModalProps {
   projectId: string;
@@ -55,7 +56,7 @@ export function WorkflowModal({ projectId, statuses, onClose }: WorkflowModalPro
 
   return (
     <>
-      <Modal title="Workflow" onClose={onClose} footer={<button className="btn-primary" onClick={onClose}>Done</button>}>
+      <Modal title="Workflow" onClose={onClose} footer={<><HelpLink section="workflow" /><button className="btn-primary" onClick={onClose}>Done</button></>}>
         <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
           Drag to reorder. Tasks moved into a status marked <strong>Done</strong> count as completed.
         </p>

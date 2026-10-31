@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Modal } from '@/components/Modal';
 import { useTheme } from '@/hooks/useTheme';
 import { isTyping, MOD_KEY, onCommand, openShortcuts } from '@/lib/commands';
@@ -13,6 +13,7 @@ const GROUPS: { title: string; items: [string[], string][] }[] = [
       [['G', 'H'], 'Go to Home'],
       [['G', 'M'], 'Go to My tasks'],
       [['G', 'R'], 'Go to Reports'],
+      [['G', '?'], 'Open Help'],
       [['T'], 'Switch light / dark theme'],
       [['?'], 'Show these shortcuts'],
     ],
@@ -41,12 +42,14 @@ export function Shortcuts() {
     let pendingG = 0;
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target) || document.querySelector('[aria-modal="true"]')) return;
+      if (e.key === 'Shift') return; // "?" needs Shift; don't let it cancel a pending G.
       const key = e.key.toLowerCase();
       if (pendingG && Date.now() - pendingG < 1200) {
         pendingG = 0;
         if (key === 'h') navigate('/');
         if (key === 'm') navigate('/my-tasks');
         if (key === 'r') navigate('/reports');
+        if (key === '?') navigate('/help');
         return;
       }
       if (key === 'g') pendingG = Date.now();
@@ -59,7 +62,7 @@ export function Shortcuts() {
 
   if (!open) return null;
   return (
-    <Modal title="Keyboard shortcuts" onClose={() => setOpen(false)} size="md">
+    <Modal title="Keyboard shortcuts" onClose={() => setOpen(false)} size="md" footer={<Link to="/help" className="btn-secondary" onClick={() => setOpen(false)}>Open the Help center</Link>}>
       <div className="space-y-5">
         {GROUPS.map((group) => (
           <section key={group.title}>

@@ -13,6 +13,7 @@ function usePageTitle(): string {
   const { data: project } = useQuery(() => (projectId ? getProject(projectId) : Promise.resolve(null)), `title:${projectId}`);
   if (projectId) return project?.name ?? 'Project';
   if (pathname.startsWith('/settings')) return 'Settings';
+  if (pathname.startsWith('/help')) return 'Help';
   if (pathname.startsWith('/my-tasks')) return 'My tasks';
   if (pathname.startsWith('/reports')) return 'Reports';
   if (pathname === '/') return 'Home';
