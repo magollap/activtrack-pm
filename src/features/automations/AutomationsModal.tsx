@@ -8,6 +8,7 @@ import { createAutomation, deleteAutomation, listAutomations, setAutomationEnabl
 import { PRIORITY_META } from '@/lib/priority';
 import { PRIORITIES, type Automation, type AutomationAction, type AutomationTrigger, type Member, type Status } from '@/lib/db/types';
 import { describeAutomation } from '@/features/automations/describe';
+import { HelpLink } from '@/features/help/HelpLink';
 
 interface AutomationsModalProps {
   projectId: string;
@@ -53,7 +54,7 @@ export function AutomationsModal({ projectId, statuses, members, onClose }: Auto
   };
 
   return (
-    <Modal title="Automations" onClose={onClose} size="lg">
+    <Modal title="Automations" onClose={onClose} size="lg" footer={<HelpLink section="automations" label="How automations work" />}>
       <div className="space-y-4">
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Rules run whenever anyone changes a card in ActivTrack, including the AI assistant and bulk edits. They act with that person's permissions.

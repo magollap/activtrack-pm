@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/useToast';
 import { timeAgo } from '@/lib/dates';
 import { deleteStatusUpdate, draftStatusUpdate, editStatusUpdate, HEALTH_META, listStatusUpdates, postStatusUpdate, type StatusUpdateInput } from '@/lib/db/statusUpdates';
 import { HEALTH_VALUES, type Health, type Member, type Status, type StatusUpdate, type Task } from '@/lib/db/types';
+import { HelpLink } from '@/features/help/HelpLink';
 
 export function HealthBadge({ health, size = 'sm' }: { health: Health; size?: 'sm' | 'md' }) {
   const meta = HEALTH_META[health];
@@ -56,7 +57,7 @@ export function StatusUpdatesModal({ projectId, tasks, statuses, members, canPos
   };
 
   return (
-    <Modal title="Status updates" onClose={onClose} size="lg">
+    <Modal title="Status updates" onClose={onClose} size="lg" footer={<HelpLink section="status-updates" />}>
       <div className="space-y-5">
         {canPost && !draft && (
           <div className="flex flex-wrap gap-2">

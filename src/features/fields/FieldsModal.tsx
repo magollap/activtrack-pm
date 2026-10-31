@@ -15,6 +15,7 @@ import {
   type FieldInput,
 } from '@/lib/db/fields';
 import { FIELD_TYPES, type CustomField, type FieldType } from '@/lib/db/types';
+import { HelpLink } from '@/features/help/HelpLink';
 
 const FIELD_ICONS: Record<FieldType, typeof Type> = {
   text: Type,
@@ -55,7 +56,7 @@ export function FieldsModal({ projectId, fields, onClose }: FieldsModalProps) {
   };
 
   return (
-    <Modal title="Custom fields" onClose={onClose} size="lg">
+    <Modal title="Custom fields" onClose={onClose} size="lg" footer={<HelpLink section="fields" />}>
       <div className="space-y-4">
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Add your own fields to every card in this project, like story points, severity or a client name. Fields marked with the eye appear on the card in the board and list.
