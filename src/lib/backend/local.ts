@@ -113,6 +113,32 @@ export function createLocalBackend(): Backend {
       return result;
     },
 
+    async uploadFile(path, file) {
+      let response: Response;
+      try {
+        response = await fetch(`/api/files/upload?path=${encodeURIComponent(path)}`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/octet-stream', 'X-Workday': '1' },
+          body: file,
+        });
+      } catch {
+        throw new Error('Could not reach the ActivTrack server.');
+      }
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(body?.error ?? 'The file could not be uploaded.');
+      }
+    },
+
+    async fileUrl(path, downloadName) {
+      return `/api/files/get?path=${encodeURIComponent(path)}${downloadName ? `&download=${encodeURIComponent(downloadName)}` : ''}`;
+    },
+
+    async deleteFile() {
+      // The server removes the file when its attachment record is deleted.
+    },
+
     async apiHeaders() {
       return { 'X-Workday': '1' };
     },

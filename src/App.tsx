@@ -8,6 +8,7 @@ import { AuthPage } from '@/features/auth/AuthPage';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { AssistantDialog } from '@/features/ai/AssistantDialog';
 import { Shortcuts } from '@/features/shortcuts/Shortcuts';
+import { AutomationToasts } from '@/features/automations/AutomationToasts';
 import { Logo } from '@/components/Logo';
 import { backend } from '@/lib/backend';
 import { emitChange } from '@/lib/db/events';
@@ -83,6 +84,7 @@ function Workspace() {
       </div>
       <AssistantDialog />
       <Shortcuts />
+      <AutomationToasts />
     </div>
   );
 }

@@ -13,6 +13,10 @@ export const COLLECTIONS = [
   'taskHistory',
   'customFields',
   'projectTemplates',
+  'automations',
+  'statusUpdates',
+  'timeEntries',
+  'attachments',
 ];
 
 const APP_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));

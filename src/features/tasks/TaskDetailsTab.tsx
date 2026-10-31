@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Check } from 'lucide-react';
 import { ChecklistSection } from '@/features/tasks/ChecklistSection';
 import { TaskFieldsSection } from '@/features/fields/TaskFieldsSection';
+import { TimeSection } from '@/features/tasks/TimeSection';
+import { AttachmentsSection } from '@/features/tasks/AttachmentsSection';
 import { useDebouncedSave } from '@/hooks/useDebouncedSave';
 import { useToast } from '@/hooks/useToast';
 import { updateTask, type TaskPatch } from '@/lib/db/tasks';
@@ -15,6 +17,7 @@ interface TaskDetailsTabProps {
   members: Member[];
   fields: CustomField[];
   editable: boolean;
+  manage?: boolean;
   onManageFields?: () => void;
 }
 
@@ -24,7 +27,7 @@ const DUE_TONE_CLASS = {
   normal: '',
 };
 
-export function TaskDetailsTab({ task, statuses, members, fields, editable, onManageFields }: TaskDetailsTabProps) {
+export function TaskDetailsTab({ task, statuses, members, fields, editable, manage = false, onManageFields }: TaskDetailsTabProps) {
   const toast = useToast();
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
@@ -124,6 +127,10 @@ export function TaskDetailsTab({ task, statuses, members, fields, editable, onMa
       </div>
 
       <ChecklistSection taskId={task.id} editable={editable} />
+
+      <AttachmentsSection task={task} members={members} editable={editable} manage={manage} />
+
+      <TimeSection task={task} members={members} editable={editable} manage={manage} />
 
       {task.completedAt && (
         <p className="text-xs text-slate-500">Completed {new Date(task.completedAt).toLocaleString()}</p>

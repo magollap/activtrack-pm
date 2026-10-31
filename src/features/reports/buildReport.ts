@@ -19,9 +19,10 @@ import { listMembers } from '@/lib/db/members';
 import { listProjects } from '@/lib/db/projects';
 import { listStatuses } from '@/lib/db/statuses';
 import { listTasks } from '@/lib/db/tasks';
+import { entryMinutes, listTimeEntries } from '@/lib/db/time';
 import { parseDay } from '@/lib/dates';
 import { PRIORITY_META } from '@/lib/priority';
-import { PRIORITIES, type CustomField, type Member, type Project, type Status, type Task } from '@/lib/db/types';
+import { PRIORITIES, type CustomField, type Member, type Project, type Status, type Task, type TimeEntry } from '@/lib/db/types';
 
 export type Period = 'daily' | 'weekly' | 'monthly';
 
@@ -31,11 +32,12 @@ export interface ReportSource {
   tasks: Task[];
   members: Member[];
   fields: CustomField[];
+  timeEntries: TimeEntry[];
 }
 
 /** Everything the reports page can see: active projects only. */
 export async function loadReportSource(): Promise<ReportSource> {
-  const [projects, statuses, tasks, members, fields] = await Promise.all([listProjects(), listStatuses(), listTasks(), listMembers(), listFields()]);
+  const [projects, statuses, tasks, members, fields, timeEntries] = await Promise.all([listProjects(), listStatuses(), listTasks(), listMembers(), listFields(), listTimeEntries()]);
   const active = projects.filter((p) => !p.archivedAt);
   const ids = new Set(active.map((p) => p.id));
   return {
@@ -44,6 +46,7 @@ export async function loadReportSource(): Promise<ReportSource> {
     tasks: tasks.filter((t) => ids.has(t.projectId)),
     members,
     fields: fields.filter((f) => ids.has(f.projectId)),
+    timeEntries,
   };
 }
 
@@ -113,6 +116,9 @@ export interface Report {
   byProject: Slice[];
   /** Breakdown by the first dropdown custom field (single-project reports only). */
   byField: { field: CustomField; slices: Slice[] } | null;
+  /** Minutes logged during the period, and who logged them. */
+  minutesLogged: number;
+  timeByPerson: Slice[];
   completedRows: Row[];
   createdRows: Row[];
   overdueRows: Row[];
@@ -181,8 +187,17 @@ export function buildReport(source: ReportSource, period: Period, anchor: Date, 
     }
   }
 
+  const taskIds = new Set(tasks.map((t) => t.id));
+  const periodEntries = source.timeEntries.filter((e) => taskIds.has(e.taskId) && inRange(e.startedAt, range));
+  const minutesByPerson = new Map<string, number>();
+  for (const e of periodEntries) minutesByPerson.set(e.userId ?? '', (minutesByPerson.get(e.userId ?? '') ?? 0) + entryMinutes(e));
+
   return {
     range,
+    minutesLogged: periodEntries.reduce((sum, e) => sum + entryMinutes(e), 0),
+    timeByPerson: [...minutesByPerson.entries()]
+      .map(([id, value]) => ({ key: id || 'none', label: memberMap.get(id)?.name ?? 'Former member', value, color: memberMap.get(id)?.color ?? '#94a3b8' }))
+      .sort((a, b) => b.value - a.value),
     created: createdTasks.length,
     completed: completedTasks.length,
     openAtEnd: open.length,
@@ -231,6 +246,7 @@ export function reportToCsv(report: Report, scope: string): string {
     ['Overdue at end of period', report.overdueAtEnd],
     ['Completion rate % (completed / open at start + created)', report.completionRate ?? ''],
     ['Average days to complete', report.avgCycleDays ?? ''],
+    ['Hours logged', Math.round((report.minutesLogged / 60) * 10) / 10],
     [],
     ['Trend', 'Created', 'Completed'],
     ...report.trend.map((t) => [t.label, t.created, t.completed]),

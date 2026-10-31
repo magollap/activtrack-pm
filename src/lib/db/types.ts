@@ -125,6 +125,59 @@ export interface ProjectTemplate extends BaseRecord {
   createdBy: string | null;
 }
 
+export type AutomationTrigger =
+  | { type: 'task_created' }
+  | { type: 'status_changed'; statusId: string }
+  | { type: 'priority_changed'; priority: Priority };
+
+export type AutomationAction =
+  | { type: 'set_assignee'; assignee: string | null }
+  | { type: 'set_priority'; priority: Priority }
+  | { type: 'move_to_status'; statusId: string }
+  | { type: 'set_due_in_days'; days: number }
+  | { type: 'add_checklist'; items: string[] }
+  | { type: 'add_comment'; text: string };
+
+/** "When <trigger>, then <actions>" for one project. */
+export interface Automation extends BaseRecord {
+  projectId: string;
+  name: string;
+  enabled: boolean;
+  trigger: AutomationTrigger;
+  actions: AutomationAction[];
+  createdBy: string | null;
+}
+
+export const HEALTH_VALUES = ['on_track', 'at_risk', 'off_track', 'complete'] as const;
+export type Health = (typeof HEALTH_VALUES)[number];
+
+export interface StatusUpdate extends BaseRecord {
+  projectId: string;
+  health: Health;
+  title: string;
+  body: string;
+  authorId: string | null;
+}
+
+export interface TimeEntry extends BaseRecord {
+  taskId: string;
+  userId: string | null;
+  startedAt: string;
+  /** Null while the timer is running. */
+  endedAt: string | null;
+  minutes: number;
+  note: string;
+}
+
+export interface Attachment extends BaseRecord {
+  taskId: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  path: string;
+  uploadedBy: string | null;
+}
+
 export interface ChecklistItem extends BaseRecord {
   taskId: string;
   text: string;
@@ -159,6 +212,10 @@ export interface Collections {
   taskHistory: TaskHistoryEntry;
   customFields: CustomField;
   projectTemplates: ProjectTemplate;
+  automations: Automation;
+  statusUpdates: StatusUpdate;
+  timeEntries: TimeEntry;
+  attachments: Attachment;
 }
 
 export type CollectionName = keyof Collections;
@@ -174,4 +231,8 @@ export const COLLECTION_NAMES: CollectionName[] = [
   'taskHistory',
   'customFields',
   'projectTemplates',
+  'automations',
+  'statusUpdates',
+  'timeEntries',
+  'attachments',
 ];

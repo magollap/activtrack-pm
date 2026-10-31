@@ -12,7 +12,11 @@ import {
 } from './auth.mjs';
 import { groupsMapped, ldapAuthenticate, roleFromGroups } from './ldap.mjs';
 import { AiError, aiConfig, checkAiRateLimit, planActions } from './ai.mjs';
-import { COLLECTIONS, defaultSettings } from './store.mjs';
+import { COLLECTIONS, DATA_DIR, defaultSettings } from './store.mjs';
+import { createHash } from 'node:crypto';
+import { createReadStream, createWriteStream } from 'node:fs';
+import { mkdir, stat, unlink } from 'node:fs/promises';
+import { join } from 'node:path';
 import {
   changeUser,
   checkFilter,
@@ -288,6 +292,7 @@ async function handleData(store, req, res, me, collection, action) {
     if (!Object.keys(filter).length) throw new HttpError(400, 'Choose what to delete.');
     const removed = removeRows(ctx, collection, filter);
     if (removed) await store.save();
+    for (const path of ctx.removedFiles) await unlink(fileOnDisk(path)).catch(() => undefined);
     return send(res, 200, { removed });
   }
   throw new HttpError(404, 'Not found.');
@@ -310,6 +315,68 @@ async function handleAi(req, res, me) {
   }
 }
 
+// ---------------------------------------------------------------- file attachments (installs)
+const FILES_DIR = join(DATA_DIR, 'files');
+const MAX_FILE = 25 * 1024 * 1024;
+/** Files are stored under a hash of their path, so a path can never escape the files folder. */
+const fileOnDisk = (path) => join(FILES_DIR, createHash('sha256').update(String(path)).digest('hex'));
+
+async function handleFiles(store, req, res, me, action) {
+  const params = new URL(req.url ?? '/', 'http://localhost').searchParams;
+  const path = params.get('path') ?? '';
+  const ctx = createContext(store, me);
+
+  if (action === 'upload' && req.method === 'POST') {
+    const [projectId, taskId, rest] = path.split('/');
+    const task = store.data.collections.tasks.find((t) => t.id === taskId);
+    if (!task || task.projectId !== projectId || !rest || path.length > 500) throw new HttpError(400, 'Invalid file location.');
+    if (!ctx.canWriteTask(taskId)) throw new HttpError(403, 'You do not have permission to add files to this card.');
+    if (Number(req.headers['content-length'] ?? 0) > MAX_FILE) throw new HttpError(413, 'This file is too large. The limit is 25 MB.');
+    await mkdir(FILES_DIR, { recursive: true });
+    const target = fileOnDisk(path);
+    let size = 0;
+    await new Promise((resolveWrite, rejectWrite) => {
+      const out = createWriteStream(target, { flags: 'wx', mode: 0o600 });
+      req.on('data', (chunk) => {
+        size += chunk.length;
+        if (size > MAX_FILE) {
+          req.destroy();
+          out.destroy();
+          rejectWrite(new HttpError(413, 'This file is too large. The limit is 25 MB.'));
+        }
+      });
+      req.pipe(out);
+      out.on('finish', resolveWrite);
+      out.on('error', (error) => rejectWrite(error.code === 'EEXIST' ? new HttpError(409, 'A file with this name already exists here.') : error));
+    }).catch(async (error) => {
+      await unlink(target).catch(() => undefined);
+      throw error;
+    });
+    return send(res, 200, { path, size });
+  }
+
+  if (action === 'get' && req.method === 'GET') {
+    const attachment = store.data.collections.attachments.find((a) => a.path === path);
+    if (!attachment || ctx.taskAccess(attachment.taskId) === null) throw new HttpError(404, 'This file no longer exists.');
+    const file = fileOnDisk(path);
+    const info = await stat(file).catch(() => null);
+    if (!info) throw new HttpError(404, 'This file no longer exists.');
+    const download = params.get('download');
+    const safeName = (download || attachment.name).replace(/["\\\r\n]/g, '_');
+    res.writeHead(200, {
+      'Content-Type': download ? 'application/octet-stream' : attachment.mimeType || 'application/octet-stream',
+      'Content-Length': info.size,
+      'Content-Disposition': `${download ? 'attachment' : 'inline'}; filename="${safeName}"; filename*=UTF-8''${encodeURIComponent(download || attachment.name)}`,
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+      'Content-Security-Policy': "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox",
+    });
+    createReadStream(file).pipe(res);
+    return;
+  }
+  throw new HttpError(404, 'Not found.');
+}
+
 /** Routes everything under /api. Writes need a custom header, which cross-site forms cannot send. */
 export async function handleApi(store, req, res, path) {
   try {
@@ -323,6 +390,7 @@ export async function handleApi(store, req, res, path) {
     if (!me) throw new HttpError(401, 'Your session has ended. Please sign in again.');
     if (area === 'admin') return await handleAdmin(store, req, res, me, rest.join('/'));
     if (area === 'ai' && rest.length === 0) return await handleAi(req, res, me);
+    if (area === 'files' && rest.length === 1) return await handleFiles(store, req, res, me, rest[0]);
     if (area === 'data' && rest.length === 2) return await handleData(store, req, res, me, rest[0], rest[1]);
     throw new HttpError(404, 'Not found.');
   } catch (error) {

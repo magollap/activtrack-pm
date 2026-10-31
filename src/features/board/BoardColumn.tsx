@@ -15,11 +15,13 @@ interface BoardColumnProps {
   members: Map<string, Member>;
   checklist: Map<string, ChecklistCount>;
   fields: CustomField[];
+  timeByTask?: Map<string, number>;
+  attachmentsByTask?: Map<string, number>;
   editable: boolean;
   onOpenTask: (taskId: string) => void;
 }
 
-export function BoardColumn({ projectId, status, taskIds, tasks, members, checklist, fields, editable, onOpenTask }: BoardColumnProps) {
+export function BoardColumn({ projectId, status, taskIds, tasks, members, checklist, fields, timeByTask, attachmentsByTask, editable, onOpenTask }: BoardColumnProps) {
   const [adding, setAdding] = useState(false);
   const { setNodeRef, isOver } = useDroppable({ id: status.id });
 
@@ -56,6 +58,8 @@ export function BoardColumn({ projectId, status, taskIds, tasks, members, checkl
                 checklist={checklist.get(id)}
                 isDone={status.isDone}
                 fields={fields}
+                minutes={timeByTask?.get(id)}
+                files={attachmentsByTask?.get(id)}
                 onOpen={() => onOpenTask(id)}
               />
             );

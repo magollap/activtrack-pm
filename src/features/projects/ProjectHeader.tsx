@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Archive, ArchiveRestore, Eye, LayoutTemplate, Lock, MoreHorizontal, Pencil, SlidersHorizontal, Trash2, UserPlus, Workflow } from 'lucide-react';
+import { Archive, ArchiveRestore, Eye, LayoutTemplate, Lock, MoreHorizontal, Pencil, SlidersHorizontal, Trash2, UserPlus, Workflow, Zap } from 'lucide-react';
+import { AutomationsModal } from '@/features/automations/AutomationsModal';
+import { HealthBadge, StatusUpdatesModal } from '@/features/status/StatusUpdates';
+import { timeAgo } from '@/lib/dates';
 import { FieldsModal } from '@/features/fields/FieldsModal';
 import { SaveTemplateModal } from '@/features/templates/SaveTemplateModal';
 import { useCurrentUser } from '@/features/auth/AuthProvider';
@@ -12,22 +15,25 @@ import { ProjectAccessModal } from '@/features/admin/ProjectAccessModal';
 import { archiveProject, deleteProject, restoreProject } from '@/lib/db/projects';
 import { useToast } from '@/hooks/useToast';
 import { ACCESS_META, canCreateProjects, canManage } from '@/lib/db/access';
-import type { CustomField, Project, ProjectAccess, Status } from '@/lib/db/types';
+import type { CustomField, Member, Project, ProjectAccess, Status, StatusUpdate, Task } from '@/lib/db/types';
 
 interface ProjectHeaderProps {
   project: Project;
   statuses: Status[];
   fields: CustomField[];
+  members: Member[];
+  tasks: Task[];
+  latestUpdate: StatusUpdate | null;
   taskCount: number;
   access: ProjectAccess | null;
   isGovernor: boolean;
 }
 
-type Dialog = 'edit' | 'workflow' | 'fields' | 'template' | 'archive' | 'delete' | 'share' | null;
+type Dialog = 'edit' | 'workflow' | 'fields' | 'automations' | 'status' | 'template' | 'archive' | 'delete' | 'share' | null;
 
 const menuItem = 'flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700';
 
-export function ProjectHeader({ project, statuses, fields, taskCount, access, isGovernor }: ProjectHeaderProps) {
+export function ProjectHeader({ project, statuses, fields, members, tasks, latestUpdate, taskCount, access, isGovernor }: ProjectHeaderProps) {
   const me = useCurrentUser();
   const toast = useToast();
   const navigate = useNavigate();
@@ -73,6 +79,21 @@ export function ProjectHeader({ project, statuses, fields, taskCount, access, is
           {project.description && (
             <p className="mt-1 max-w-2xl text-sm text-slate-500 dark:text-slate-400">{project.description}</p>
           )}
+          <button
+            type="button"
+            onClick={() => setDialog('status')}
+            className="mt-2 inline-flex max-w-full items-center gap-2 rounded-lg py-1 pr-2 text-left text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+            title="Status updates"
+          >
+            {latestUpdate ? (
+              <>
+                <HealthBadge health={latestUpdate.health} />
+                <span className="truncate"><span className="font-medium text-slate-700 dark:text-slate-200">{latestUpdate.title}</span> · {timeAgo(latestUpdate.createdAt)}</span>
+              </>
+            ) : (
+              <span className="underline decoration-dotted underline-offset-2">{manage ? 'Post a status update' : 'No status updates yet'}</span>
+            )}
+          </button>
         </div>
         {manage && <div className="flex shrink-0 items-center gap-1">
           {shareable && (
@@ -86,6 +107,9 @@ export function ProjectHeader({ project, statuses, fields, taskCount, access, is
           <button className="btn-secondary hidden lg:inline-flex" onClick={() => setDialog('fields')}>
             <SlidersHorizontal className="h-4 w-4" /> Fields
           </button>
+          <button className="btn-secondary hidden xl:inline-flex" onClick={() => setDialog('automations')}>
+            <Zap className="h-4 w-4" /> Automations
+          </button>
           <Popover
             align="right"
             trigger={({ toggle }) => (
@@ -97,6 +121,7 @@ export function ProjectHeader({ project, statuses, fields, taskCount, access, is
                 <button className={menuItem} onClick={() => { closeMenu(); setDialog('edit'); }}><Pencil className="h-4 w-4" /> Edit details</button>
                 <button className={menuItem} onClick={() => { closeMenu(); setDialog('workflow'); }}><Workflow className="h-4 w-4" /> Manage workflow</button>
                 <button className={menuItem} onClick={() => { closeMenu(); setDialog('fields'); }}><SlidersHorizontal className="h-4 w-4" /> Custom fields</button>
+                <button className={menuItem} onClick={() => { closeMenu(); setDialog('automations'); }}><Zap className="h-4 w-4" /> Automations</button>
                 {canCreateProjects(me) && (
                   <button className={menuItem} onClick={() => { closeMenu(); setDialog('template'); }}><LayoutTemplate className="h-4 w-4" /> Save as template</button>
                 )}
@@ -122,6 +147,8 @@ export function ProjectHeader({ project, statuses, fields, taskCount, access, is
 
       {dialog === 'edit' && <ProjectFormModal project={project} onClose={close} />}
       {dialog === 'share' && <ProjectAccessModal project={project} onClose={close} />}
+      {dialog === 'status' && <StatusUpdatesModal projectId={project.id} tasks={tasks} statuses={statuses} members={members} canPost={manage} onClose={close} />}
+      {dialog === 'automations' && <AutomationsModal projectId={project.id} statuses={statuses} members={members} onClose={close} />}
       {dialog === 'fields' && <FieldsModal projectId={project.id} fields={fields} onClose={close} />}
       {dialog === 'template' && <SaveTemplateModal project={project} taskCount={taskCount} onClose={close} />}
       {dialog === 'workflow' && <WorkflowModal projectId={project.id} statuses={statuses} onClose={close} />}
