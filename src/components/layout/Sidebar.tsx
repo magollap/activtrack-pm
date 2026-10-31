@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Archive, ChevronRight, Home, Keyboard, ListTodo, Lock, Plus, Settings, Sparkles, X } from 'lucide-react';
+import { Archive, BarChart3, ChevronRight, Home, Keyboard, ListTodo, Lock, Plus, Settings, Sparkles, X } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { MOD_KEY, openAssistant, openShortcuts } from '@/lib/commands';
 import { ProjectFormModal } from '@/features/projects/ProjectFormModal';
@@ -46,9 +46,9 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
 
   return (
     <>
-      {mobileOpen && <div className="fixed inset-0 z-40 animate-fade-in bg-slate-900/40 md:hidden" onClick={onClose} />}
+      {mobileOpen && <div className="fixed inset-0 z-40 print:hidden animate-fade-in bg-slate-900/40 md:hidden" onClick={onClose} />}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-fg md:static md:z-auto md:w-64 md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col print:hidden border-r border-sidebar-border bg-sidebar text-sidebar-fg md:static md:z-auto md:w-64 md:translate-x-0 ${
           mobileOpen ? 'animate-slide-right' : 'hidden md:flex'
         }`}
       >
@@ -69,6 +69,9 @@ export function Sidebar({ mobileOpen, onClose }: SidebarProps) {
             </NavLink>
             <NavLink to="/my-tasks" className={linkClass} onClick={onClose}>
               <ListTodo className="h-4 w-4" /> My tasks
+            </NavLink>
+            <NavLink to="/reports" className={linkClass} onClick={onClose}>
+              <BarChart3 className="h-4 w-4" /> Reports
             </NavLink>
             <button type="button" className={`${linkClass({ isActive: false })} w-full`} onClick={() => { onClose(); openAssistant(); }}>
               <Sparkles className="h-4 w-4 text-sidebar-accent" /> AI assistant

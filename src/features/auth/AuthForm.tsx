@@ -6,10 +6,10 @@ import { errorMessage } from '@/lib/errors';
 
 type Mode = 'signIn' | 'signUp';
 
-export function AuthForm({ notice }: { notice: string | null }) {
+export function AuthForm({ notice, initialMode = 'signIn' }: { notice: string | null; initialMode?: Mode }) {
   const [options, setOptions] = useState<AuthOptions | null>(null);
   const [optionsError, setOptionsError] = useState<string | null>(null);
-  const [mode, setMode] = useState<Mode>('signIn');
+  const [mode, setMode] = useState<Mode>(initialMode);
   const [method, setMethod] = useState<SignInMethod>('local');
   const [name, setName] = useState('');
   const [identifier, setIdentifier] = useState('');

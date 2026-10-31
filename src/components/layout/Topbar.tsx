@@ -14,6 +14,7 @@ function usePageTitle(): string {
   if (projectId) return project?.name ?? 'Project';
   if (pathname.startsWith('/settings')) return 'Settings';
   if (pathname.startsWith('/my-tasks')) return 'My tasks';
+  if (pathname.startsWith('/reports')) return 'Reports';
   if (pathname === '/') return 'Home';
   return 'Not found';
 }
@@ -22,7 +23,7 @@ export function Topbar({ onOpenMenu }: { onOpenMenu: () => void }) {
   const title = usePageTitle();
 
   return (
-    <header className="relative flex h-16 shrink-0 items-center gap-2 border-b border-slate-200 bg-white/80 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80 sm:gap-3 sm:px-6">
+    <header className="relative flex h-16 print:hidden shrink-0 items-center gap-2 border-b border-slate-200 bg-white/80 px-4 backdrop-blur dark:border-slate-800 dark:bg-slate-950/80 sm:gap-3 sm:px-6">
       <button className="icon-btn -ml-2 md:hidden" onClick={onOpenMenu} aria-label="Open menu">
         <Menu className="h-5 w-5" />
       </button>
